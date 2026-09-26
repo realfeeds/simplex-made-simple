@@ -371,10 +371,11 @@ function generateProblem(nOrig, m, type, useBigM = false) {
     const b = bnorm.map(v => new FracM(new Frac(v), ZERO));
     const { iterations: iters, tabRaw, tabEliminated } = solveAll(stdObj, A, b, initialBasis);
     const last = iters[iters.length - 1];
-
-    if (last.unbounded || !last.optimal) continue;
-    const numPivots = iters.length - 1;
-    if (numPivots < 1 || numPivots > 5) continue;
+    if (!last.optimal && !last.unbounded) continue;
+    if (!last.unbounded) {
+      const numPivots = iters.length - 1;
+      if (numPivots < 1 || numPivots > 5) continue;
+    }
 
     let artificialsNonZero = false;
     const finalTab = last.tab;
@@ -1672,6 +1673,7 @@ function renderIterPickLeave() {
   const iter = p.iterations[currentIterIdx];
   const tab = iter.tab;
   const nTotal = p.nOrig + p.nExtra;
+  const isUnbounded = iter.unbounded || findLeaving(tab, iter.enterCol) === -1;
 
   let table = `<table class="tableau"><thead><tr><th></th><th>${texInline('z')}</th>`;
   for (let j = 0; j < nTotal; j++) {
@@ -1696,21 +1698,45 @@ function renderIterPickLeave() {
   }
   table += `</tbody></table>`;
 
+  let extraOptions = '';
+  if (isUnbounded) {
+    extraOptions = `
+      <div style="margin-top:1.25rem;text-align:center;">
+        <button class="btn btn-outline-danger" id="btnUnbounded_${currentIterIdx}" style="font-weight:bold;padding:0.6rem 1.2rem;">
+          🚫 Tidak Ada Baris Pivot (Solusi Tidak Terbatas / Unbounded)
+        </button>
+      </div>`;
+  }
+
   const html = `<div class="card">
     <div class="card-title">
       <span>📤 Pilih Baris Pivot (Leaving)</span>
       <button class="btn-help" onclick="openHelpDrawer(4)">❓ Bagaimana caranya?</button>
     </div>
     <div class="tableau-wrapper">${table}</div>
+    ${extraOptions}
     <div id="feedback4c_${currentIterIdx}" class="feedback"></div>
   </div>`;
   const container = appendBlock(html);
+
+  if (isUnbounded && $(`btnUnbounded_${currentIterIdx}`)) {
+    $(`btnUnbounded_${currentIterIdx}`).onclick = () => {
+      const fb = $(`feedback4c_${currentIterIdx}`);
+      fb.className = 'feedback show success';
+      fb.textContent = '✅ Benar! Seluruh elemen pada kolom pivot ≤ 0, sehingga tidak ada variabel keluar. Masalah ini bersifat Tidak Terbatas (Unbounded).';
+      disableContainer(container);
+      setTimeout(renderUnboundedConclusionCard, 800);
+    };
+  }
 
   container.querySelectorAll('td.selectable').forEach(td => {
     td.onclick = () => {
       const row = parseInt(td.dataset.row);
       const fb = $(`feedback4c_${currentIterIdx}`);
-      if (row === iter.leaveRow) {
+      if (isUnbounded) {
+        fb.className = 'feedback show error';
+        fb.textContent = '❌ Tidak ada baris yang bisa dipilih. Pada kolom pivot ini, seluruh elemen kendala bernilai ≤ 0 (pembagian rasio tidak valid). Klik tombol "Tidak Ada Baris Pivot".';
+      } else if (row === iter.leaveRow) {
         td.classList.add('selected-leave');
         fb.className = 'feedback show success';
         fb.textContent = `✅ Benar! Lanjut mengisi tabel iterasi baru.`;
@@ -1722,6 +1748,34 @@ function renderIterPickLeave() {
       }
     };
   });
+}
+
+function renderUnboundedConclusionCard() {
+  setStep(5);
+  const html = `<div class="card" style="border-color:var(--error);">
+    <div class="card-title">
+      <span style="color:var(--error);">🚫 Solusi Tidak Terbatas (Unbounded Solution)</span>
+      <button class="btn-help" onclick="openHelpDrawer(4)">❓ Bagaimana caranya?</button>
+    </div>
+    <div style="margin-bottom:1rem;line-height:1.6;">
+      <p style="margin-bottom:0.75rem;">
+        Pada iterasi ini, kolom pivot memuat elemen-elemen kendala bernilai <b>&le; 0</b> (nol atau negatif).
+        Akibatnya, <b>Uji Rasio Minimum tidak menghasilkan rasio positif yang valid</b> dan tidak ada variabel basis yang dapat keluar (<i>Leaving Variable</i>).
+      </p>
+      <div style="background:var(--error-bg);color:var(--text-primary);padding:1rem;border-radius:var(--radius);margin-bottom:1rem;border-left:4px solid var(--error);">
+        <b>📌 Kesimpulan Aljabar & Geometris:</b><br>
+        Variabel masuk dapat ditingkatkan nilainya hingga <b>$+\\infty$</b> tanpa melanggar batasan kendala manapun.<br>
+        Nilai fungsi tujuan <b>$z$</b> dapat ditingkatkan/diturunkan tanpa batas (<b>$z \\to \\pm\\infty$</b>).
+      </div>
+      <p style="font-weight:bold;color:var(--error);">
+        ❌ Tidak ada solusi optimal berhingga untuk masalah ini.
+      </p>
+    </div>
+    <div style="text-align:center; padding: 1rem 0 0 0;">
+      <button class="btn btn-primary" style="font-size:1.1rem; padding:0.75rem 2rem;" onclick="renderSetup()">Soal Baru →</button>
+    </div>
+  </div>`;
+  appendBlock(html);
 }
 
 function renderIterFillTableau() {
