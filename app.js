@@ -1957,6 +1957,14 @@ function initTheme() {
   const savedTheme = localStorage.getItem('simplex_theme') || 
     (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
   applyTheme(savedTheme);
+
+  const btn = $('themeToggle');
+  if (btn) {
+    btn.onclick = (e) => {
+      e.preventDefault();
+      toggleTheme();
+    };
+  }
 }
 
 function applyTheme(theme) {
@@ -1964,7 +1972,7 @@ function applyTheme(theme) {
   localStorage.setItem('simplex_theme', theme);
   const btn = $('themeToggle');
   if (btn) {
-    btn.innerHTML = theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+    btn.innerHTML = theme === 'dark' ? '☀️ Mode Terang' : '🌙 Mode Gelap';
   }
 }
 
