@@ -12,27 +12,7 @@
   --error-bg: #f8d7da;
   --warning: #ffc107;
   --warning-bg: #fff3cd;
-  --radius: 6px;
-  --input-bg: #ffffff;
-  --table-hover: #e9ecef;
-}
-
-[data-theme="dark"] {
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted: #94a3b8;
-  --border-color: #334155;
-  --accent: #38bdf8;
-  --success: #4ade80;
-  --success-bg: #064e3b;
-  --error: #f87171;
-  --error-bg: #7f1d1d;
-  --warning: #fbbf24;
-  --warning-bg: #78350f;
-  --input-bg: #0f172a;
-  --table-hover: #334155;
+  --radius: 4px;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -43,12 +23,6 @@ body {
   color: var(--text-primary);
   min-height: 100vh;
   line-height: 1.5;
-  transition: background 0.25s ease, color 0.25s ease;
-}
-
-input, select {
-  background: var(--input-bg);
-  color: var(--text-primary);
 }
 
 /* ===================== HEADER ===================== */
@@ -58,7 +32,6 @@ header {
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
   margin-bottom: 2rem;
-  transition: background 0.25s ease, border-color 0.25s ease;
 }
 
 header h1 {
@@ -71,42 +44,6 @@ header p {
   color: var(--text-secondary);
   font-size: 1rem;
   margin-top: 0.5rem;
-}
-
-/* ===================== FLOATING THEME TOGGLE ===================== */
-.floating-theme-toggle {
-  position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  z-index: 9999;
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
-  padding: 0.65rem 1.25rem;
-  border-radius: 50px;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 0.95rem;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
-  user-select: none;
-}
-
-.floating-theme-toggle:hover {
-  transform: translateY(-3px) scale(1.03);
-  border-color: var(--accent);
-  color: var(--accent);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
-}
-
-.floating-theme-toggle:active {
-  transform: translateY(0) scale(0.97);
 }
 
 /* ===================== STEP INDICATOR ===================== */
