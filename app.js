@@ -1952,8 +1952,31 @@ function renderStep5() {
   };
 }
 
+// ===================== THEME TOGGLE SYSTEM =====================
+function initTheme() {
+  const savedTheme = localStorage.getItem('simplex_theme') || 
+    (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  applyTheme(savedTheme);
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('simplex_theme', theme);
+  const btn = $('themeToggle');
+  if (btn) {
+    btn.innerHTML = theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+  }
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+}
+
 // ===================== INIT =====================
 function init() {
+  initTheme();
   renderSetup();
 }
 

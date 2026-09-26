@@ -12,7 +12,27 @@
   --error-bg: #f8d7da;
   --warning: #ffc107;
   --warning-bg: #fff3cd;
-  --radius: 4px;
+  --radius: 6px;
+  --input-bg: #ffffff;
+  --table-hover: #e9ecef;
+}
+
+[data-theme="dark"] {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --border-color: #334155;
+  --accent: #38bdf8;
+  --success: #4ade80;
+  --success-bg: #064e3b;
+  --error: #f87171;
+  --error-bg: #7f1d1d;
+  --warning: #fbbf24;
+  --warning-bg: #78350f;
+  --input-bg: #0f172a;
+  --table-hover: #334155;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -23,27 +43,64 @@ body {
   color: var(--text-primary);
   min-height: 100vh;
   line-height: 1.5;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+input, select {
+  background: var(--input-bg);
+  color: var(--text-primary);
 }
 
 /* ===================== HEADER ===================== */
 header {
-  text-align: center;
-  padding: 2rem 1rem 1rem;
+  padding: 1.5rem 1rem;
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
   margin-bottom: 2rem;
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+
+.header-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1000px;
+  margin: 0 auto;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
 header h1 {
-  font-size: 2rem;
+  font-size: 1.8rem;
   font-weight: normal;
   color: var(--text-primary);
 }
 
 header p {
   color: var(--text-secondary);
-  font-size: 1rem;
-  margin-top: 0.5rem;
+  font-size: 0.95rem;
+  margin-top: 0.25rem;
+}
+
+.theme-toggle {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 0.4rem 0.9rem;
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.theme-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* ===================== STEP INDICATOR ===================== */
