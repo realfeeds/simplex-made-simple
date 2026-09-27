@@ -748,7 +748,8 @@ input.wrong, select.wrong { border-color: var(--error); background: var(--error-
 }
 .optimal-btn.yes:hover { background: var(--success-bg); border-color: var(--success); }
 .optimal-btn.no:hover { background: var(--warning-bg); border-color: var(--warning); }
-.optimal-btn.unbounded:hover { background: var(--error-bg); border-color: var(--error); }
+.optimal-btn.infeasible:hover { background: var(--error-bg); border-color: var(--error); color: var(--error); }
+.optimal-btn.unbounded:hover { background: var(--error-bg); border-color: var(--error); color: var(--error); }
 
 /* ===================== HELP DRAWER / POPUP ===================== */
 .help-drawer {
@@ -1042,4 +1043,77 @@ input.wrong, select.wrong { border-color: var(--error); background: var(--error-
 .theme-toggle-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+}
+
+/* ===================== METHOD TOGGLE (TABLEAU VS ALJABAR) ===================== */
+.method-toggle-container {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.method-toggle-label {
+  font-weight: bold;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.method-toggle-buttons {
+  display: flex;
+  gap: 0.5rem;
+  background: var(--bg-primary);
+  padding: 0.3rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+}
+
+.method-toggle-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 0.5rem 1.1rem;
+  border-radius: var(--radius);
+  font-weight: bold;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: inherit;
+}
+
+.method-toggle-btn:hover {
+  color: var(--accent);
+}
+
+.method-toggle-btn.active {
+  background: var(--card-bg);
+  color: var(--accent);
+  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.15);
+}
+
+[data-theme="dark"] .method-toggle-btn.active {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+@media (max-width: 680px) {
+  .method-toggle-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .method-toggle-buttons {
+    flex-direction: column;
+  }
 }
