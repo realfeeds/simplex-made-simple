@@ -727,11 +727,13 @@ function setStep(s) {
 
 function disableContainer(container) {
   if (!container) return;
+  container.style.opacity = '0.6';
+  container.style.pointerEvents = 'none';
   container.querySelectorAll('input, select').forEach(el => el.disabled = true);
   container.querySelectorAll('button').forEach(el => {
-    // Dim the button slightly to indicate it's done but keep it visible
     el.style.opacity = '0.5';
     el.style.pointerEvents = 'none';
+    el.disabled = true;
   });
   // Remove hover/selectable classes
   container.querySelectorAll('.selectable').forEach(el => {
@@ -798,6 +800,8 @@ function undoPreviousStep() {
   const prevItem = historyBlocks[historyBlocks.length - 1];
   if (prevItem && prevItem.element) {
     const container = prevItem.element;
+    container.style.opacity = '1';
+    container.style.pointerEvents = 'auto';
     container.querySelectorAll('input, select').forEach(el => el.disabled = false);
     container.querySelectorAll('button').forEach(el => {
       el.style.opacity = '1';
@@ -3701,17 +3705,39 @@ function renderIterAljabarPickEnter() {
   const objEq = formatAlgebraicObjective(tab);
 
   let candidatesCardsHtml = nonBasisCandidates.map(c => `
-    <div style="background:var(--card-bg); border:1px solid var(--border-color); padding:0.75rem 1rem; border-radius:var(--radius); margin-bottom:0.75rem;">
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
-        <div style="font-size:1.05rem; font-weight:bold;">
-          ${texInline(c.name)}
-        </div>
-        <button class="btn btn-outline-secondary btn-algebra-enter" data-col="${c.col}" style="font-weight:bold;">
-          Pilih ${texInline(c.name)} (Masuk)
-        </button>
-      </div>
-    </div>
+    <button class="btn btn-outline-secondary btn-algebra-enter" data-col="${c.col}" style="font-weight:bold; padding:0.5rem 1rem; font-size:0.92rem;">
+      ${texInline(c.name)} (Masuk)
+    </button>
   `).join('');
+
+  // Pre-calculate system equations for Section 2 (Leaving Variable)
+  const targetEnterCol = iter.enterCol !== undefined ? iter.enterCol : findEntering(tab);
+  const enterVarName = formatSubscriptVar(targetEnterCol - 1);
+  const targetLeaveRow = findLeaving(tab, targetEnterCol);
+  const isUnbounded = iter.unbounded || targetLeaveRow === -1;
+
+  const eqLines = [];
+  for (let i = 1; i < tab.rows.length; i++) {
+    eqLines.push(formatAlgebraicEq(tab, i));
+  }
+  const systemEqLatex = `\\begin{aligned}\n${eqLines.join(' \\\\\n')}\n\\end{aligned}`;
+
+  let leaveButtonsHtml = '';
+  for (let i = 1; i < tab.rows.length; i++) {
+    const basisVarName = formatSubscriptVar(tab.basis[i - 1]);
+    leaveButtonsHtml += `
+      <button class="btn btn-outline-secondary btn-algebra-leave" data-row="${i}" style="font-weight:bold; padding:0.5rem 1rem; font-size:0.92rem; opacity:0.6;" disabled>
+        ${texInline(basisVarName)} (Keluar)
+      </button>
+    `;
+  }
+
+  if (isUnbounded) {
+    leaveButtonsHtml += `
+      <button class="btn btn-outline-danger" id="btnUnboundedAljabar_${currentIterIdx}" style="font-weight:bold; padding:0.5rem 1rem; opacity:0.6;" disabled>
+        🚫 Tidak Ada Batasan Rasio (Solusi Tidak Terbatas / Unbounded)
+      </button>`;
+  }
 
   const html = `<div class="card" id="iterAljabarCard_${currentIterIdx}">
     <div class="card-title">
@@ -3732,18 +3758,23 @@ function renderIterAljabarPickEnter() {
         <div style="font-size:1.05rem; font-weight:bold; margin-bottom:1rem; background:var(--bg-primary); padding:0.65rem 0.85rem; border-radius:var(--radius); border:1px solid var(--border-color);">
           ${texInline(objEq)}
         </div>
-        <div style="margin-bottom:1rem;">
+        <div style="display:flex; flex-wrap:wrap; gap:0.75rem; margin-bottom:1rem;">
           ${candidatesCardsHtml}
         </div>
         <div id="feedbackAljabarEnter_${currentIterIdx}" class="feedback"></div>
       </div>
 
-      <!-- RIGHT COLUMN: LEAVING VARIABLE (Revealed after entering variable selected) -->
-      <div id="secAljabarLeave_${currentIterIdx}" style="display:none;">
+      <!-- RIGHT COLUMN: LEAVING VARIABLE -->
+      <div id="secAljabarLeave_${currentIterIdx}">
         <div style="font-weight:bold; margin-bottom:0.6rem; font-size:0.95rem;">
           2. Uji Rasio & Pilih Variabel Keluar (Leaving Variable / Pemblok):
         </div>
-        <div id="eqRatioContainer_${currentIterIdx}"></div>
+        <div style="font-size:1.05rem; font-weight:bold; margin-bottom:1rem; background:var(--bg-primary); padding:0.65rem 0.85rem; border-radius:var(--radius); border:1px solid var(--border-color);">
+          ${texInline(systemEqLatex)}
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:0.75rem; margin-bottom:1rem;" id="eqRatioContainer_${currentIterIdx}">
+          ${leaveButtonsHtml}
+        </div>
         <div id="feedbackAljabarLeave_${currentIterIdx}" class="feedback"></div>
       </div>
     </div>
@@ -3753,7 +3784,7 @@ function renderIterAljabarPickEnter() {
 
   if ($(`btnSkipAljabarEnter_${currentIterIdx}`)) {
     $(`btnSkipAljabarEnter_${currentIterIdx}`).onclick = () => {
-      const targetCol = iter.enterCol;
+      const targetCol = iter.enterCol !== undefined ? iter.enterCol : targetEnterCol;
       const btn = container.querySelector(`button[data-col="${targetCol}"]`);
       if (btn) btn.click();
     };
@@ -3767,7 +3798,8 @@ function renderIterAljabarPickEnter() {
       const clickedVal = tab.rows[0][col];
 
       const isCorrectCol = (col === iter.enterCol) || 
-                           (targetVal && clickedVal && clickedVal.isPos() && clickedVal.eq(targetVal));
+                           (targetVal && clickedVal && clickedVal.isPos() && clickedVal.eq(targetVal)) ||
+                           (col === targetEnterCol);
 
       if (isCorrectCol) {
         iter.enterCol = col;
@@ -3784,81 +3816,21 @@ function renderIterAljabarPickEnter() {
         btn.style.color = 'var(--bg-primary)';
         btn.style.borderColor = 'var(--text-primary)';
 
-        // Render Leaving section in the SAME card
-        revealAljabarLeaveSection(container);
+        // Enable Leave buttons in Section 2
+        container.querySelectorAll('.btn-algebra-leave').forEach(b => {
+          b.disabled = false;
+          b.style.opacity = '1';
+        });
+        if ($(`btnUnboundedAljabar_${currentIterIdx}`)) {
+          $(`btnUnboundedAljabar_${currentIterIdx}`).disabled = false;
+          $(`btnUnboundedAljabar_${currentIterIdx}`).style.opacity = '1';
+        }
       } else {
         fb.className = 'feedback show error';
         fb.textContent = '❌ Bukan variabel itu. Pilih variabel non-basis dengan koefisien positif terbesar pada fungsi z.';
       }
     };
   });
-}
-
-function revealAljabarLeaveSection(container) {
-  const p = prob;
-  const iter = p.iterations[currentIterIdx];
-  const tab = iter.tab;
-  const enterCol = iter.enterCol;
-  const enterVarName = formatSubscriptVar(enterCol - 1);
-  const targetLeaveRow = findLeaving(tab, enterCol);
-  const isUnbounded = iter.unbounded || targetLeaveRow === -1;
-
-  let eqRatioHtml = '';
-  for (let i = 1; i < tab.rows.length; i++) {
-    const basisVarName = formatSubscriptVar(tab.basis[i - 1]);
-    const aCoeff = tab.rows[i][enterCol];
-    const bVal = tab.rows[i][tab.rows[i].length - 1];
-
-    if (aCoeff.isPos()) {
-      const ratio = bVal.div(aCoeff);
-      eqRatioHtml += `
-        <div style="background:var(--card-bg); border:1px solid var(--border-color); padding:0.75rem 1rem; border-radius:var(--radius); margin-bottom:0.75rem;">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
-            <div>
-              ${texInline(`${basisVarName} \\ge 0 \\implies ${bVal.toString()} - ${aCoeff.toString()}${enterVarName} \\ge 0 \\implies ${enterVarName} \\le \\frac{${bVal.toString()}}{${aCoeff.toString()}} = ${ratio.toString()}`)}
-            </div>
-            <button class="btn btn-outline-secondary btn-algebra-leave" data-row="${i}" style="font-weight:bold;">
-              Pilih ${texInline(basisVarName)} (Keluar)
-            </button>
-          </div>
-        </div>
-      `;
-    } else {
-      // Non-positive coefficient equation ALSO HAS A BUTTON so student can select and get feedback!
-      eqRatioHtml += `
-        <div style="background:var(--card-bg); border:1px solid var(--border-color); padding:0.75rem 1rem; border-radius:var(--radius); opacity:0.85; margin-bottom:0.75rem;">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
-            <div>
-              ${texInline(`${basisVarName}: \\text{koef. } ${enterVarName} = ${aCoeff.toString()} \\le 0 \\implies \\text{tidak membatasi}`)}
-            </div>
-            <button class="btn btn-outline-secondary btn-algebra-leave" data-row="${i}" style="font-weight:bold;">
-              Pilih ${texInline(basisVarName)} (Keluar)
-            </button>
-          </div>
-        </div>
-      `;
-    }
-  }
-
-  if (isUnbounded) {
-    eqRatioHtml += `
-      <div style="margin-top:1.25rem;text-align:center;">
-        <button class="btn btn-outline-danger" id="btnUnboundedAljabar_${currentIterIdx}" style="font-weight:bold;padding:0.6rem 1.2rem;">
-          🚫 Tidak Ada Batasan Rasio (Solusi Tidak Terbatas / Unbounded)
-        </button>
-      </div>`;
-  }
-
-  const ratioBox = container.querySelector(`#eqRatioContainer_${currentIterIdx}`);
-  if (ratioBox) {
-    ratioBox.innerHTML = eqRatioHtml;
-    renderMathIn(ratioBox);
-  }
-
-  const secLeave = container.querySelector(`#secAljabarLeave_${currentIterIdx}`);
-  if (secLeave) {
-    secLeave.style.display = 'block';
-  }
 
   if (isUnbounded && $(`btnUnboundedAljabar_${currentIterIdx}`)) {
     $(`btnUnboundedAljabar_${currentIterIdx}`).onclick = () => {
@@ -3874,6 +3846,7 @@ function revealAljabarLeaveSection(container) {
     btn.onclick = () => {
       const row = parseInt(btn.dataset.row);
       const fb = $(`feedbackAljabarLeave_${currentIterIdx}`);
+      const enterCol = iter.enterCol || targetEnterCol;
       const aCoeff = tab.rows[row][enterCol];
       const bVal = tab.rows[row][tab.rows[row].length - 1];
       const basisVarName = formatSubscriptVar(tab.basis[row - 1]);
@@ -3899,17 +3872,25 @@ function revealAljabarLeaveSection(container) {
         setTimeout(renderIterAljabarSubstitution, 600);
       } else if (!aCoeff.isPos()) {
         fb.className = 'feedback show error';
-        fb.textContent = `❌ Salah! Variabel basis ${basisVarName} tidak membatasi ${enterVarName} karena koefisiennya ${aCoeff.toString()} (≤ 0). Kenaikan ${enterVarName} tidak membuat ${basisVarName} bernilai 0.`;
+        fb.textContent = `❌ Salah! Variabel basis ${basisVarName} tidak membatasi ${enterVarName} karena koefisiennya ${aCoeff.toString()} (≤ 0).`;
       } else {
         const ratio = bVal.div(aCoeff);
         const targetACoeff = tab.rows[targetLeaveRow][enterCol];
         const targetBVal = tab.rows[targetLeaveRow][tab.rows[targetLeaveRow].length - 1];
         const minRatio = targetBVal.div(targetACoeff);
         fb.className = 'feedback show error';
-        fb.textContent = `❌ Salah! Variabel basis ${basisVarName} belum bernilai 0 (rasionya = ${ratio.toString()}, lebih besar dari rasio minimum ${minRatio.toString()}). Variabel basis yang keluar harus memiliki rasio terkecil!`;
+        fb.textContent = `❌ Salah! Variabel basis ${basisVarName} belum bernilai 0 (rasionya = ${ratio.toString()}, lebih besar dari rasio minimum ${minRatio.toString()}).`;
       }
     };
   });
+}
+
+function revealAljabarLeaveSection(container) {
+  // Already rendered in renderIterAljabarPickEnter from start
+  const secLeave = container.querySelector(`#secAljabarLeave_${currentIterIdx}`);
+  if (secLeave) {
+    secLeave.style.display = 'block';
+  }
 }
 
 function renderIterAljabarPickLeave() {
