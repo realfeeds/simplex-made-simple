@@ -511,7 +511,7 @@ function generateProblem(nOrig, m, type, useBigM = false) {
       ops, objOrig, Aorig, borig,
       Anorm, bnorm, normOps,
       stdObj, A, b, initialBasis,
-      tabRaw, tabEliminated,
+      tabRaw, tabEliminated, tabInitialEliminated: tabEliminated,
       iterations: iters
     };
   }
@@ -604,7 +604,7 @@ function generateFallback(nOrig, m, type, useBigM = false) {
     ops, objOrig, Aorig, borig,
     Anorm, bnorm, normOps,
     stdObj, A, b, initialBasis,
-    tabRaw, tabEliminated,
+    tabRaw, tabEliminated, tabInitialEliminated: tabEliminated,
     iterations: iters
   };
 }
@@ -673,7 +673,7 @@ function createCustomProblem(type, nOrig, m, objOrig, Aorig, borig, ops) {
     ops, objOrig, Aorig, borig,
     Anorm, bnorm, normOps,
     stdObj, A, b, initialBasis,
-    tabRaw, tabEliminated,
+    tabRaw, tabEliminated, tabInitialEliminated: tabEliminated,
     iterations: iters
   };
 }
@@ -937,319 +937,185 @@ const slidesData = [
   // ===================== BAGIAN 1: SIMPLEX ALJABAR =====================
   {
     badge: "Slide 1 / 11 • Simplex Aljabar",
-    title: "1. Simplex Aljabar • Konsep Dasar & Variabel Basis",
+    title: "1. Simplex Aljabar • Ide Dasar & Formulasi Contoh",
     content: `
       <p style="margin-bottom:1rem; line-height:1.6; font-size:0.92rem;">
-        <b>Metode Simplex Aljabar</b> menyelesaikan masalah Pemrograman Linear (LP) melalui manipulasi dan substitusi persamaan aljabar secara sistematis tanpa mengandalkan matriks tabel.
+        <b>Ide Dasar:</b> Daerah feasibel program linear berbentuk poligon (atau polihedron). Solusi optimal selalu berada di salah satu <b>titik sudutnya</b>, dan setiap titik sudut bersesuaian dengan satu <b>BFS (Basic Feasible Solution)</b>.
       </p>
 
       <div style="background:rgba(124,58,237,0.06); padding:1rem 1.25rem; border-radius:var(--radius); border-left:4px solid var(--accent); margin-bottom:1.25rem;">
-        <h4 style="color:var(--accent); margin-bottom:0.5rem;">3 Komponen Utama Model LP:</h4>
-        <ol style="margin-left:1.2rem; line-height:1.7; font-size:0.88rem;">
-          <li><b>Variabel Keputusan ($x_1, x_2, \\dots, x_n$):</b> Jumlah produk atau alokasi sumber daya yang dicari ($x_j \\ge 0$).</li>
-          <li><b>Fungsi Tujuan ($z$):</b> Persamaan linear yang dioptimalkan:
-            $$\\text{Maksimum/Minimum } z = c_1 x_1 + c_2 x_2 + \\dots + c_n x_n$$
-          </li>
-          <li><b>Fungsi Kendala:</b> Batasan kapasitas sumber daya dalam pertidaksamaan:
-            $$a_{i1} x_1 + a_{i2} x_2 + \\dots \\ (\\le, \\ge, =) \\ b_i \\quad (i = 1, 2, \\dots, m)$$
-          </li>
-        </ol>
+        <h4 style="color:var(--accent); margin-bottom:0.5rem;">Alur Kerja Metode Simplex:</h4>
+        <p style="font-size:0.88rem; line-height:1.6; color:var(--text-primary);">
+          Simplex tidak mencoba semua titik sudut. Ia mulai dari satu titik sudut asal, lalu berpindah ke titik sudut tetangga yang nilai $z$-nya lebih kecil (untuk minimasi), dan berhenti ketika tidak ada tetangga yang lebih baik. Satu perpindahan tersebut disebut <b>iterasi (pivot)</b>.
+        </p>
       </div>
 
-      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:1rem; margin-bottom:1rem;">
-        <div style="background:var(--card-bg); padding:1.1rem; border-radius:var(--radius); border:1px solid var(--border-color);">
-          <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.95rem;">Variabel Basis vs Non-basis</h4>
-          <p style="font-size:0.88rem; color:var(--text-secondary); margin-bottom:0.6rem; line-height:1.5;">
-            Dalam sistem persamaan dengan $n$ total variabel dan $m$ kendala ($n > m$):
-          </p>
-          <ul style="margin-left:1.1rem; font-size:0.88rem; line-height:1.7;">
-            <li><b>Variabel Basis ($m$ buah):</b> Variabel aktif bernilai $\\ge 0$ yang berada di ruas kiri persamaan. Nilai aktualnya ditentukan oleh nilai di Ruas Kanan (RK).</li>
-            <li><b>Variabel Non-basis ($n-m$ buah):</b> Variabel pasif di ruas kanan yang <b>diset bernilai $0$</b>.</li>
-            <li><b>Solusi Basis Layak (BFS):</b> Pasangan nilai variabel basis & non-basis merepresentasikan satu <b>Titik Sudut Layak (Corner Point)</b> daerah solusi.</li>
-          </ul>
-        </div>
-
-        <div style="background:var(--card-bg); padding:1.1rem; border-radius:var(--radius); border:1px solid var(--border-color);">
-          <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.95rem;">Cara Kerja Simplex Aljabar</h4>
-          <ol style="margin-left:1.1rem; font-size:0.88rem; line-height:1.7;">
-            <li><b>Solusi Awal:</b> Asumsikan titik asal origin $(0,0)$ sebagai basis awal (variabel non-basis $= 0$).</li>
-            <li><b>Variabel Masuk (Entering):</b> Pilih variabel non-basis dengan koefisien paling negatif pada fungsi minimasi $-z$.</li>
-            <li><b>Variabel Keluar (Leaving):</b> Uji kendala terketat yang paling cepat mencapai $0$ (rasio terkecil).</li>
-            <li><b>Substitusi Aljabar:</b> Isolasi variabel masuk, lalu substitusikan ke seluruh persamaan lain hingga optimal.</li>
-          </ol>
+      <div style="background:var(--card-bg); padding:1.1rem; border-radius:var(--radius); border:1px solid var(--border-color); margin-bottom:1rem;">
+        <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.95rem;">Contoh Masalah yang Dipakai:</h4>
+        <div style="background:var(--bg-primary); padding:0.85rem 1.1rem; border-radius:var(--radius); font-size:0.95rem; text-align:center;">
+          $$\\min z = -3x_1 - 2x_2 \\quad \\text{dengan kendala} \\quad x_1 + x_2 \\le 4, \\quad 2x_1 + x_2 \\le 6, \\quad x_1, x_2 \\ge 0$$
         </div>
       </div>
     `
   },
   {
-    badge: "Slide 2 / 11 • Simplex Aljabar",
-    title: "1. Simplex Aljabar • Persamaan Baris $z$ & Bentuk Baku",
+    title: "1. Simplex Aljabar • Ubah ke Bentuk Baku",
     content: `
       <p style="margin-bottom:1rem; font-size:0.92rem; line-height:1.6;">
-        Prosedur standar Metode Simplex Aljabar dilakukan dengan menyusun pertidaksamaan ke <b>Bentuk Baku ($=$)</b> dan memindahkan variabel fungsi tujuan ke ruas kiri menjadi <b>Persamaan Baris $z$</b>.
+        <b>Bentuk Baku:</b> Ubah sistem pertidaksamaan ke bentuk baku $Ax = b$ dengan $x \\ge 0$. Untuk kendala "$\\le$", tambahkan variabel slack non-negatif ($x_3, x_4 \\ge 0$).
       </p>
 
-      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:1rem; margin-bottom:1.25rem;">
-        <div style="background:var(--card-bg); padding:1rem; border-radius:var(--radius); border:2px dashed var(--border-color);">
-          <h4 style="color:var(--text-muted); margin-bottom:0.5rem; font-size:0.95rem;">Langkah 1: Soal Asli</h4>
-          <p style="font-size:0.83rem; color:var(--text-secondary); margin-bottom:0.75rem;">Masalah maksimasi keuntungan:</p>
-          <div style="background:var(--bg-primary); padding:0.75rem; border-radius:var(--radius); font-size:0.88rem;">
-            $$\\begin{aligned}
-              \\text{Maksimumkan } & z = 3x_1 + 2x_2 \\\\
-              \\text{kendala: } & x_1 + x_2 \\le 6 \\\\
-              & 2x_1 + x_2 \\le 8 \\\\
-              & x_1, x_2 \\ge 0
-            \\end{aligned}$$
-          </div>
+      <div style="background:var(--card-bg); padding:1.1rem; border-radius:var(--radius); border:1px solid var(--border-color); margin-bottom:1.25rem;">
+        <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.95rem;">Persamaan Baku & Konstruksi Matriks:</h4>
+        <div style="background:var(--bg-primary); padding:0.85rem 1.1rem; border-radius:var(--radius); font-size:0.9rem; margin-bottom:0.85rem;">
+          $$\\begin{aligned}
+            x_1 + x_2 + x_3 &= 4 \\\\
+            2x_1 + x_2 + x_4 &= 6
+          \\end{aligned}$$
         </div>
-
-        <div style="background:var(--card-bg); padding:1rem; border-radius:var(--radius); border:2px solid var(--accent);">
-          <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.95rem;">Langkah 2: Bentuk Standar & Persamaan Baris $z$</h4>
-          <p style="font-size:0.83rem; color:var(--text-secondary); margin-bottom:0.75rem;">Tambahkan variabel slack $x_3, x_4 \\ge 0$ dan bentuk baris $z$:</p>
-          <div style="background:var(--bg-primary); padding:0.75rem; border-radius:var(--radius); font-size:0.88rem;">
-            $$\\begin{aligned}
-              x_1 + x_2 + x_3 &= 6 \\quad (\\text{Pers. 1}) \\\\
-              2x_1 + x_2 + x_4 &= 8 \\quad (\\text{Pers. 2}) \\\\
-              \\mathbf{z - 3x_1 - 2x_2} &= \\mathbf{0} \\quad (\\mathbf{\\text{Pers. } z})
-            \\end{aligned}$$
-            <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:0.4rem;">
-              Basis awal: $x_1=0, x_2=0, x_3=6, x_4=8, z=0$
-            </div>
-          </div>
+        <div style="font-size:0.88rem; line-height:1.7;">
+          Di sini terdapat $n = 4$ variabel dan $m = 2$ kendala:
+          $$A = \\begin{pmatrix} 1 & 1 & 1 & 0 \\\\ 2 & 1 & 0 & 1 \\end{pmatrix} = [a_1, a_2, a_3, a_4], \\quad b = \\begin{pmatrix} 4 \\\\ 6 \\end{pmatrix}, \\quad c = (-3, -2, 0, 0)$$
         </div>
       </div>
 
       <div style="background:rgba(124,58,237,0.06); padding:0.85rem 1.1rem; border-radius:var(--radius); border-left:4px solid var(--accent); font-size:0.88rem; line-height:1.6;">
-        <b>📌 Aturan Simplex Aljabar pada Baris $z$:</b><br>
-        • <b>Variabel Masuk (Entering):</b> Variabel non-basis dengan koefisien <b>paling negatif</b> pada baris $z$ (akan meningkatkan nilai $z$ paling cepat).<br>
-        • <b>Kriteria Stop (Optimal):</b> Berhenti jika semua koefisien variabel non-basis pada baris $z$ sudah <b>$\\ge 0$</b>.
+        <b>💡 Catatan Tanda:</b> Aturan ini untuk minimasi. Untuk masalah maksimasi, ubah fungsi tujuan menjadi $\\min(-z)$.
       </div>
     `
   },
   {
     badge: "Slide 3 / 11 • Simplex Aljabar",
-    title: "1. Simplex Aljabar • Langkah 3: Iterasi 1 (Entering, Leaving & Eliminasi)",
+    title: "1. Simplex Aljabar • Pilih Basis Awal & Hitung BFS",
     content: `
       <p style="margin-bottom:1rem; font-size:0.92rem; line-height:1.6;">
-        Pada Persamaan Baris $z$: $z - 3x_1 - 2x_2 = 0$, terdapat koefisien negatif ($-3$ dan $-2$). Solusi <b>belum optimal</b>.
+        <b>Solusi Basis Awal:</b> Pilih $m$ kolom dari $A$ yang membentuk matriks basis $B$ (tak-singular). Variabel yang kolomnya dipilih disebut <b>variabel basis ($x_B$)</b>, sedangkan sisanya adalah <b>variabel nonbasis ($x_N = 0$)</b>.
       </p>
 
-      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:1rem; margin-bottom:1.25rem;">
-        <!-- ENTERING VARIABLE -->
-        <div style="background:rgba(124,58,237,0.05); padding:1.1rem; border-radius:var(--radius); border-left:4px solid var(--accent);">
-          <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.95rem;">a) Entering Variable ($x_1$ Masuk Basis)</h4>
-          <p style="font-size:0.85rem; color:var(--text-secondary); line-height:1.6; margin-bottom:0.6rem;">
-            Koefisien negatif terbesar (paling negatif) pada baris $z$ adalah <b>$-3$ pada $x_1$</b> $\\implies x_1$ masuk basis.
-          </p>
-        </div>
-
-        <!-- LEAVING VARIABLE -->
-        <div style="background:rgba(234,179,8,0.08); padding:1.1rem; border-radius:var(--radius); border-left:4px solid #eab308;">
-          <h4 style="color:#b45309; margin-bottom:0.5rem; font-size:0.95rem;">b) Uji Rasio & Leaving Variable ($x_4$ Keluar Basis)</h4>
-          <ul style="margin-left:1.1rem; font-size:0.85rem; line-height:1.6; color:var(--text-primary);">
-            <li>Pers. 1: Rasio $= 6 / 1 = 6$</li>
-            <li>Pers. 2: Rasio $= 8 / 2 = 4$ <b style="color:#b45309;">(Minimum!)</b></li>
-            <li><b>Pivot:</b> Pers. 2, elemen pivot $= 2 \implies x_4$ keluar basis.</li>
-          </ul>
-        </div>
-      </div>
-
       <div style="background:var(--card-bg); padding:1.1rem; border-radius:var(--radius); border:1px solid var(--border-color); margin-bottom:1.25rem;">
-        <h4 style="color:var(--accent); margin-bottom:0.6rem; font-size:0.95rem;">c) Operasi Baris Substitusi & Eliminasi Aljabar:</h4>
-        <div style="font-size:0.86rem; line-height:1.7;">
-          1. <b>Normalisasi Pers. 2 (bagi 2):</b> $x_1 + 0.5x_2 + 0.5x_4 = 4 \quad (\text{Pers. 2 baru})$<br>
-          2. <b>Eliminasi $x_1$ dari Pers. 1:</b> $\text{Pers. 1} - (\text{Pers. 2 baru}) \implies \mathbf{0.5x_2 + x_3 - 0.5x_4 = 2}$<br>
-          3. <b>Eliminasi $x_1$ dari Pers. $z$:</b> $\text{Pers. } z + 3 \times (\text{Pers. 2 baru}) \implies \mathbf{z - 0.5x_2 + 1.5x_4 = 12}$
+        <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.95rem;">Formula Solusi Basis Layak (BFS):</h4>
+        <div style="background:var(--bg-primary); padding:0.75rem; border-radius:var(--radius); font-size:0.92rem; text-align:center; margin-bottom:0.85rem;">
+          $$x_B = B^{-1}b = \\bar b, \\qquad x_N = 0, \\qquad z_0 = c_B^T x_B$$
         </div>
+        <p style="font-size:0.85rem; color:var(--text-secondary); line-height:1.6;">
+          Basis awal paling mudah adalah menggunakan variabel slack karena $B = I \\implies B^{-1} = I$ (tanpa perlu hitung invers). Syaratnya semua $b \\ge 0$.
+        </p>
       </div>
 
-      <div style="background:var(--success-bg); padding:0.9rem 1.1rem; border-radius:var(--radius); border-left:4px solid var(--success); font-size:0.88rem;">
-        <strong style="color:var(--success);">Hasil Iterasi 1:</strong> Basis baru $x_1 = 4, \, x_3 = 2, \, z = 12$.
+      <div style="background:var(--card-bg); padding:1.1rem; border-radius:var(--radius); border:1px solid var(--border-color);">
+        <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.95rem;">Contoh (Iterasi 1 Awal):</h4>
+        <ul style="margin-left:1.1rem; font-size:0.88rem; line-height:1.7;">
+          <li><b>Basis:</b> $(x_3, x_4) \\implies B = [a_3, a_4] = I$</li>
+          <li><b>Solusi Basis:</b> $x_B = (x_3, x_4) = B^{-1}b = (4, 6)$, dan $x_1 = x_2 = 0$</li>
+          <li><b>Nilai Objektif:</b> $c_B = (0, 0) \\implies z_0 = c_B^T x_B = 0$ (Titik $(0,0)$ pada grafik)</li>
+        </ul>
       </div>
     `
   },
   {
     badge: "Slide 4 / 11 • Simplex Aljabar",
-    title: "1. Simplex Aljabar • Iterasi 1: Isolasi & Substitusi Persamaan",
+    title: "1. Simplex Aljabar • Uji Optimalitas (Pricing)",
     content: `
       <p style="margin-bottom:1rem; font-size:0.92rem; line-height:1.6;">
-        Setelah menyetujui bahwa <b>$x_1$ masuk basis</b> dan <b>$x_4$ keluar basis</b>, kita harus menyusun ulang persamaan aljabar agar $x_1$ menjadi variabel basis di ruas kiri.
+        <b>Uji Optimalitas:</b> Uji apakah BFS saat ini sudah optimal. Untuk setiap variabel nonbasis $j$, hitung $y_j = B^{-1}a_j$, $z_j = c_B^T y_j$, lalu periksa nilai marginal $z_j - c_j$.
       </p>
 
       <div style="background:var(--card-bg); padding:1.1rem; border-radius:var(--radius); border:1px solid var(--border-color); margin-bottom:1.25rem;">
-        <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.95rem;">Langkah 3: Isolasi Persamaan Substitusi untuk $x_1$</h4>
-        <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:0.6rem; line-height:1.6;">
-          Ambil persamaan kendala milik variabel keluar $x_4$ dari Iterasi 0:
-        </p>
-        <div style="background:var(--bg-primary); padding:0.75rem 1rem; border-radius:var(--radius); font-size:0.95rem; text-align:center; margin-bottom:0.75rem;">
-          $$x_4 = 8 - 2x_1 - x_2$$
+        <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.95rem;">Perhitungan Pricing ($z_j - c_j$):</h4>
+        <div style="background:var(--bg-primary); padding:0.75rem; border-radius:var(--radius); font-size:0.9rem; text-align:center; margin-bottom:0.75rem;">
+          $$y_j = B^{-1}a_j, \\qquad z_j = c_B^T y_j \\implies z_j - c_j = c_B^T y_j - c_j$$
         </div>
-        <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:0.5rem; line-height:1.6;">
-          Pindahkan $2x_1$ ke ruas kiri dan $x_4$ ke ruas kanan, lalu bagi kedua ruas dengan koefisien $2$:
-        </p>
-        <div style="background:rgba(124,58,237,0.08); padding:0.75rem 1rem; border-radius:var(--radius); font-size:1rem; text-align:center; border:1px solid var(--accent); color:var(--accent); font-weight:bold;">
-          $$2x_1 = 8 - x_2 - x_4 \\implies \\mathbf{x_1 = 4 - 0.5x_2 - 0.5x_4}$$
-        </div>
+        <ul style="margin-left:1.1rem; font-size:0.85rem; line-height:1.6;">
+          <li>Jika <b>semua $z_j - c_j \\le 0$</b> $\\implies$ BFS sudah <b>OPTIMAL</b>. Berhenti.</li>
+          <li>Jika ada $z_j - c_j > 0$, pilih $x_k$ dengan $z_k - c_k$ <b>positif terbesar</b> sebagai <b>Entering Variable (masuk basis)</b>.</li>
+        </ul>
       </div>
 
-      <div style="background:var(--card-bg); padding:1.1rem; border-radius:var(--radius); border:1px solid var(--border-color); margin-bottom:1.25rem;">
-        <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.95rem;">Langkah 4: Substitusikan Ekspresi $x_1$ ke Persamaan Lainnya</h4>
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap:1rem; margin-top:0.75rem;">
-          <div style="background:var(--bg-primary); padding:0.9rem; border-radius:var(--radius);">
-            <strong style="color:var(--text-primary); font-size:0.88rem;">a. Ke Fungsi Tujuan ($\\text{Min } -z$):</strong>
-            <div style="font-size:0.85rem; margin-top:0.4rem; line-height:1.6;">
-              $$\\begin{aligned}
-                \\text{Min } -z &= -3(4 - 0.5x_2 - 0.5x_4) - 2x_2 \\\\
-                &= -12 + 1.5x_2 + 1.5x_4 - 2x_2 \\\\
-                &= \\mathbf{-12 - 0.5x_2 + 1.5x_4}
-              \\end{aligned}$$
-            </div>
-          </div>
-
-          <div style="background:var(--bg-primary); padding:0.9rem; border-radius:var(--radius);">
-            <strong style="color:var(--text-primary); font-size:0.88rem;">b. Ke Kendala Basis $x_3$:</strong>
-            <div style="font-size:0.85rem; margin-top:0.4rem; line-height:1.6;">
-              $$\\begin{aligned}
-                x_3 &= 6 - (4 - 0.5x_2 - 0.5x_4) - x_2 \\\\
-                &= 6 - 4 + 0.5x_2 + 0.5x_4 - x_2 \\\\
-                &= \\mathbf{2 - 0.5x_2 + 0.5x_4}
-              \\end{aligned}$$
-            </div>
-          </div>
+      <div style="background:var(--card-bg); padding:1.1rem; border-radius:var(--radius); border:1px solid var(--border-color);">
+        <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.95rem;">Contoh (Iterasi 1):</h4>
+        <div style="font-size:0.85rem; line-height:1.7;">
+          • Nonbasis: $x_1$ dan $x_2$. Karena $B = I$, maka $y_1 = a_1 = (1, 2)^T$ dan $y_2 = a_2 = (1, 1)^T$.<br>
+          • $c_B = (0, 0) \\implies z_1 = c_B^T y_1 = 0$, $z_2 = c_B^T y_2 = 0$.<br>
+          • $z_1 - c_1 = 0 - (-3) = \\mathbf{3}$ &nbsp;|&nbsp; $z_2 - c_2 = 0 - (-2) = 2$.<br>
+          • Nilai positif terbesar adalah $3 \\implies \\mathbf{x_1 \\text{ masuk basis}}$.
         </div>
-      </div>
-
-      <!-- ITERASI 1 SUMMARY BOX -->
-      <div style="background:var(--success-bg); padding:0.9rem 1.1rem; border-radius:var(--radius); border-left:4px solid var(--success); font-size:0.88rem;">
-        <strong style="color:var(--success);">Hasil Iterasi 1 (Titik Sudut $(4,0)$):</strong><br>
-        • Variabel Basis: $x_1 = 4, \\, x_3 = 2$ &nbsp;|&nbsp; Variabel Non-basis ($=0$): $x_2 = 0, \\, x_4 = 0$<br>
-        • Nilai $-z = -12 \\implies z = 12$ (Keuntungan naik dari 0 menjadi 12!).
       </div>
     `
   },
   {
     badge: "Slide 5 / 11 • Simplex Aljabar",
-    title: "1. Simplex Aljabar • Iterasi 2: Pertukaran Basis Kedua",
+    title: "1. Simplex Aljabar • Cek Ketakterbatasan & Rasio Minimum",
     content: `
       <p style="margin-bottom:1rem; font-size:0.92rem; line-height:1.6;">
-        Periksa fungsi tujuan Iterasi 1: $\\text{Min } -z = -12 - 0.5x_2 + 1.5x_4$. Karena masih terdapat koefisien negatif pada variabel non-basis ($-0.5$ pada $x_2$), solusi <b>belum optimal</b>. Iterasi 2 dijalankan!
+        <b>Cek Ketakterbatasan & Uji Rasio:</b> Periksa apakah solusi tak terbatas, lalu tentukan variabel mana yang <b>keluar dari basis (Leaving Variable)</b> melalui uji rasio minimum.
       </p>
 
       <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:1rem; margin-bottom:1.25rem;">
-        <div style="background:rgba(124,58,237,0.05); padding:1rem; border-radius:var(--radius); border-left:3px solid var(--accent);">
-          <strong style="color:var(--accent); font-size:0.9rem;">a. Entering Variable Baru</strong>
-          <p style="font-size:0.83rem; color:var(--text-secondary); margin-top:0.3rem; margin-bottom:0; line-height:1.5;">
-            Pilih <b>$x_2$</b> karena koefisien $-0.5$ adalah satu-satunya nilai negatif pada fungsi tujuan $\\text{Min } -z = -12 - 0.5x_2 + 1.5x_4$.
+        <div style="background:rgba(124,58,237,0.05); padding:1rem; border-radius:var(--radius); border-left:4px solid var(--accent);">
+          <h4 style="color:var(--accent); margin-bottom:0.4rem; font-size:0.92rem;">Cek Ketakterbatasan</h4>
+          <p style="font-size:0.83rem; line-height:1.6; color:var(--text-secondary);">
+            Hitung $y_k = B^{-1}a_k$. Jika semua komponen $y_{ik} \\le 0$, variabel masuk $x_k$ dapat dinaikkan tanpa batas $\\implies$ <b>SOLUSI UNBOUNDED</b>. Berhenti.
           </p>
         </div>
-        <div style="background:rgba(234,179,8,0.08); padding:1rem; border-radius:var(--radius); border-left:3px solid #eab308;">
-          <strong style="color:#b45309; font-size:0.9rem;">b. Leaving Variable Baru (Uji Rasio)</strong>
-          <p style="font-size:0.83rem; color:var(--text-secondary); margin-top:0.3rem; margin-bottom:0; line-height:1.5;">
-            • Dari kendala $x_3 = 2 - 0.5x_2 \\ge 0 \\implies \\mathbf{x_2 \\le 4}$ <b style="color:#b45309;">(Batas terkecil! $x_3$ keluar)</b><br>
-            • Dari kendala $x_1 = 4 - 0.5x_2 \\ge 0 \\implies x_2 \\le 8$
-          </p>
-        </div>
-      </div>
 
-      <div style="background:var(--card-bg); padding:1.1rem; border-radius:var(--radius); border:1px solid var(--border-color); margin-bottom:1.25rem;">
-        <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.95rem;">c. Isolasi Persamaan Substitusi untuk $x_2$</h4>
-        <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:0.5rem; line-height:1.5;">
-          Dari kendala $x_3 = 2 - 0.5x_2 + 0.5x_4$, isolasi $0.5x_2$ ke ruas kiri:
-        </p>
-        <div style="background:rgba(124,58,237,0.08); padding:0.6rem; border-radius:var(--radius); font-size:0.95rem; text-align:center; border:1px solid var(--accent); color:var(--accent); font-weight:bold;">
-          $$0.5x_2 = 2 - x_3 + 0.5x_4 \\implies \\mathbf{x_2 = 4 - 2x_3 + x_4}$$
+        <div style="background:rgba(234,179,8,0.08); padding:1rem; border-radius:var(--radius); border-left:4px solid #eab308;">
+          <h4 style="color:#b45309; margin-bottom:0.4rem; font-size:0.92rem;">Uji Rasio Minimum</h4>
+          <p style="font-size:0.83rem; line-height:1.6; color:var(--text-primary);">
+            Cari baris $r$ dengan rasio terkecil:
+            $$\\frac{\\bar b_r}{y_{rk}} = \\min_i \\left\\{ \\frac{\\bar b_i}{y_{ik}} : y_{ik} > 0 \\right\\}$$
+            Variabel basis ke-$r$ adalah <b>Leaving Variable</b>.
+          </p>
         </div>
       </div>
 
       <div style="background:var(--card-bg); padding:1.1rem; border-radius:var(--radius); border:1px solid var(--border-color);">
-        <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.95rem;">d. Substitusi Akhir ke $-z$ dan Persamaan Kendala $x_1$</h4>
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:0.85rem; margin-top:0.6rem;">
-          <div style="background:var(--bg-primary); padding:0.8rem; border-radius:var(--radius);">
-            <span style="font-size:0.8rem; color:var(--text-muted);">Fungsi Tujuan Akhir ($-z$):</span>
-            <div style="font-size:0.85rem; margin-top:0.3rem; line-height:1.5;">
-              $$\\begin{aligned}
-                \\text{Min } -z &= -12 - 0.5(4 - 2x_3 + x_4) + 1.5x_4 \\\\
-                &= \\mathbf{-14 + x_3 + x_4}
-              \\end{aligned}$$
-            </div>
-          </div>
-          <div style="background:var(--bg-primary); padding:0.8rem; border-radius:var(--radius);">
-            <span style="font-size:0.8rem; color:var(--text-muted);">Kendala Basis Akhir $x_1$:</span>
-            <div style="font-size:0.85rem; margin-top:0.3rem; line-height:1.5;">
-              $$\\begin{aligned}
-                x_1 &= 4 - 0.5(4 - 2x_3 + x_4) - 0.5x_4 \\\\
-                &= \\mathbf{2 + x_3 - x_4}
-              \\end{aligned}$$
-            </div>
-          </div>
+        <h4 style="color:var(--accent); margin-bottom:0.5rem; font-size:0.95rem;">Contoh (Iterasi 1):</h4>
+        <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:0.6rem;">
+          Untuk $x_1$ masuk: $y_1 = (1, 2)^T > 0$ (Lanjut). Hitung rasio untuk $\\bar b = (4, 6)^T$:
+        </p>
+        <table class="tableau" style="width:100%; font-size:0.85rem; margin-bottom:0.5rem;">
+          <thead><tr><th>Baris</th><th>Basis</th><th>$\\bar b_i$</th><th>$y_{i1}$</th><th>Rasio ($\\bar b_i / y_{i1}$)</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>$x_3$</td><td>4</td><td>1</td><td>$4/1 = 4$</td></tr>
+            <tr style="background:rgba(234,179,8,0.15);"><td>2</td><td>$x_4$</td><td>6</td><td>2</td><td>$6/2 = 3$ <b style="color:#b45309;">(Minimum!)</b></td></tr>
+          </tbody>
+        </table>
+        <div style="font-size:0.85rem; color:var(--text-primary);">
+          Rasio minimum di baris 2 $\\implies \\mathbf{x_4 \\text{ keluar basis}}$, dan nilai $x_1 = 3$.
         </div>
       </div>
     `
   },
   {
     badge: "Slide 6 / 11 • Simplex Aljabar",
-    title: "1. Simplex Aljabar • Hasil Optimal & Perbandingan Iterasi",
+    title: "1. Simplex Aljabar • Perbarui Solusi & Iterasi Berikutnya",
     content: `
       <p style="margin-bottom:1rem; font-size:0.92rem; line-height:1.6;">
-        Periksa fungsi tujuan hasil Iterasi 2: $\\text{Min } -z = -14 + x_3 + x_4$.
+        <b>Perbarui Solusi:</b> Perbarui solusi basis $x_B$, nilai $z$, dan gantikan kolom $a_{B_r}$ dengan $a_k$ pada matriks $B$. Kemudian ulangi dari Uji Optimalitas (Pricing).
       </p>
 
-      <div style="background:var(--success-bg); color:var(--text-primary); padding:1rem 1.25rem; border-radius:var(--radius); border-left:4px solid var(--success); margin-bottom:1.25rem;">
-        <h4 style="color:var(--success); margin-bottom:0.4rem; font-size:0.95rem;">🎉 Kriteria Optimalitas Aljabar Tercapai!</h4>
-        <p style="font-size:0.88rem; line-height:1.6; margin-bottom:0.6rem;">
-          Karena seluruh koefisien variabel non-basis ($x_3, x_4$) pada fungsi tujuan sudah <b>positif ($\\ge 0$)</b> yaitu $+1x_3$ dan $+1x_4$, menaikkan nilai $x_3$ atau $x_4$ hanya akan memperbesar nilai $-z$ (memperkecil nilai $z$). Maka iterasi <b>SELESAI</b>.
-        </p>
-        <div style="display:flex; flex-wrap:wrap; gap:1rem; background:rgba(255,255,255,0.7); padding:0.75rem 1rem; border-radius:var(--radius); font-size:0.88rem;">
-          <div>• <b>Variabel Keputusan:</b> $x_1 = 2, \\, x_2 = 4$</div>
-          <div>• <b>Sisa Kapasitas (Slack):</b> $x_3 = 0, \\, x_4 = 0$</div>
-          <div>• <b>Solusi Maksimum Asli ($z_{\\text{max}}$):</b> $z_{\\text{max}} = -(-14) = \\mathbf{14}$</div>
+      <div style="background:var(--card-bg); padding:1rem; border-radius:var(--radius); border:1px solid var(--border-color); margin-bottom:1.25rem;">
+        <h4 style="color:var(--accent); margin-bottom:0.4rem; font-size:0.92rem;">Update Solusi Iterasi 1:</h4>
+        <div style="font-size:0.85rem; line-height:1.6;">
+          • $x_1 = 3, \\, x_3 = 4 - 1(3) = 1, \\, x_4 = 0, \\, x_2 = 0 \\implies z = 0 - 3(3) = -9$.<br>
+          • Basis Baru: $(x_3, x_1)$, berpindah dari titik $(0,0)$ ke titik $(3,0)$.
         </div>
       </div>
 
-      <h4 style="color:var(--accent); margin-bottom:0.6rem;">Ringkasan Perjalanan Iterasi Simplex Aljabar:</h4>
-      <div style="overflow-x:auto;">
-        <table class="tableau" style="width:100%; font-size:0.85rem;">
-          <thead>
-            <tr>
-              <th>Iterasi</th>
-              <th>Titik Sudut $(x_1, x_2)$</th>
-              <th>Variabel Basis</th>
-              <th>Variabel Non-basis</th>
-              <th>Nilai $-z$</th>
-              <th>Nilai $z$</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><b>Iterasi 0</b></td>
-              <td>$(0, 0)$</td>
-              <td>$x_3 = 6, \\, x_4 = 8$</td>
-              <td>$x_1 = 0, \\, x_2 = 0$</td>
-              <td>$0$</td>
-              <td>$0$</td>
-              <td>Layak, Belum Optimal</td>
-            </tr>
-            <tr>
-              <td><b>Iterasi 1</b></td>
-              <td>$(4, 0)$</td>
-              <td>$x_1 = 4, \\, x_3 = 2$</td>
-              <td>$x_2 = 0, \\, x_4 = 0$</td>
-              <td>$-12$</td>
-              <td>$12$</td>
-              <td>Layak, Belum Optimal</td>
-            </tr>
-            <tr style="background:rgba(34,197,94,0.12);">
-              <td><b>Iterasi 2</b></td>
-              <td>$(2, 4)$</td>
-              <td>$x_1 = 2, \\, x_2 = 4$</td>
-              <td>$x_3 = 0, \\, x_4 = 0$</td>
-              <td>$-14$</td>
-              <td><b>$14$</b></td>
-              <td><b style="color:var(--success);">OPTIMAL LAYAK</b></td>
-            </tr>
-          </tbody>
-        </table>
+      <div style="background:var(--card-bg); padding:1rem; border-radius:var(--radius); border:1px solid var(--border-color); margin-bottom:1.25rem;">
+        <h4 style="color:var(--accent); margin-bottom:0.4rem; font-size:0.92rem;">Iterasi 2 & Iterasi 3 (Ringkasan):</h4>
+        <div style="font-size:0.85rem; line-height:1.6;">
+          <b>Iterasi 2:</b> Basis $(x_3, x_1) \\implies B = \\begin{pmatrix}1&1\\\\0&2\\end{pmatrix}, B^{-1} = \\begin{pmatrix}1&-\\tfrac12\\\\0&\\tfrac12\\end{pmatrix}$.<br>
+          • $y_2 = B^{-1}a_2 = (\\tfrac12, \\tfrac12)^T \\implies z_2 - c_2 = c_B^T y_2 - c_2 = \\mathbf{\\tfrac12 > 0} \\implies x_2$ masuk basis.<br>
+          • Rasio min di baris 1 $\\implies x_3$ keluar basis ($x_2 = 2$). Basis baru: $(x_2, x_1)$ titik $(2,2)$, $z = -10$.<br><br>
+          <b>Iterasi 3 (Optimal):</b> Basis $(x_2, x_1) \\implies B = \\begin{pmatrix}1&1\\\\1&2\\end{pmatrix}, B^{-1} = \\begin{pmatrix}2&-1\\\\-1&1\\end{pmatrix}$.<br>
+          • Nonbasis $x_3, x_4$: $z_3 - c_3 = -1 \\le 0$ dan $z_4 - c_4 = -1 \\le 0$. Semua $\\le 0 \\implies$ <b>OPTIMAL!</b>
+        </div>
+      </div>
+
+      <div style="background:var(--success-bg); color:var(--text-primary); padding:0.9rem 1.1rem; border-radius:var(--radius); border-left:4px solid var(--success);">
+        <strong style="color:var(--success);">Solusi Optimal Akhir:</strong><br>
+        $$\\boxed{x^* = (x_1, x_2) = (2, 2), \\qquad z_{\\min} = -10}$$
       </div>
     `
   },
@@ -1767,24 +1633,21 @@ function getHelpData(step) {
   if (currentMethod === 'aljabar') {
     if (step === 3) {
       return {
-        title: '💡 Panduan Sistem Persamaan Aljabar (Baris z)',
+        title: '💡 Panduan Solusi Basis & Matriks Aljabar Awal',
         body: `
-          <h4 style="color:var(--accent);margin-bottom:0.4rem;">📘 Teori Simplex Aljabar (Baris $z$)</h4>
+          <h4 style="color:var(--accent);margin-bottom:0.4rem;">📘 Teori Solusi Basis Layak (BFS)</h4>
           <p style="margin-bottom:0.75rem;">
-            Pada Metode Aljabar, fungsi tujuan <b>Maksimasi $z$</b> ditulis dalam bentuk persamaan homogen baris $z$:
-            $$\\mathbf{z - c_1 x_1 - c_2 x_2 - \\dots = 0}$$
+            Solusi basis diperoleh dengan memilih $m$ kolom dari matriks $A$ menjadi matriks basis $B$. Variabel non-basis diset bernilai $0$:
+            $$x_B = B^{-1}b = \\bar b, \\qquad x_N = 0, \\qquad z_0 = c_B^T x_B$$
           </p>
-          <h4 style="color:var(--accent);margin-bottom:0.4rem;">✍️ Tahapan Pengisian</h4>
+          <h4 style="color:var(--accent);margin-bottom:0.4rem;">✍️ Tahapan Pengerjaan</h4>
           <ol>
             <li><b>Variabel Basis & Non-Basis Awal:</b>
-              <br>• <b>Basis Awal:</b> Variabel Slack ${isBigM ? 'atau Artifisial' : ''} yang membentuk identitas positif ($+1$).
+              <br>• <b>Basis Awal:</b> Variabel Slack ${isBigM ? 'atau Artifisial' : ''} yang membentuk matriks identitas $I$ ($B = I$).
               <br>• <b>Non-Basis Awal (= 0):</b> Variabel keputusan asal ($x_1, x_2, \\dots$).
             </li>
-            <li><b>Persamaan Fungsi Tujuan (Baris $z$):</b>
-              <br>Isikan konstanta (bernilai <code>0</code> pada Iterasi 0) dan koefisien dari $x_1, x_2, \\dots$ pada persamaan $z$.
-            </li>
-            <li><b>Persamaan Kendala Basis ($x_{\\text{basis}} = \\text{konstanta} + a_1 x_{nb1} + \\dots$):</b>
-              <br>Isolasikan variabel basis di ruas kiri sebagai fungsi dari variabel non-basis di ruas kanan.
+            <li><b>Sistem Persamaan Aljabar:</b>
+              <br>Menyusun $z_0 = c_B^T x_B$ dan persamaan kendala $x_B = B^{-1}b - \\sum_{j \\in N} (B^{-1}a_j) x_j$.
             </li>
           </ol>
         `
@@ -1793,26 +1656,25 @@ function getHelpData(step) {
 
     if (step === 4) {
       return {
-        title: '💡 Panduan Iterasi & Substitusi Simplex Aljabar',
+        title: '💡 Panduan Uji Optimalitas (Pricing) & Rasio Simplex Aljabar',
         body: `
-          <h4 style="color:var(--accent);margin-bottom:0.4rem;">📘 Aturan Iterasi Simplex Aljabar</h4>
+          <h4 style="color:var(--accent);margin-bottom:0.4rem;">📘 Aturan Pricing ($z_j - c_j$) & Rasio</h4>
           <p style="margin-bottom:0.75rem;">
-            Iterasi Aljabar menukarkan variabel non-basis dan variabel basis secara berulang.
+            Metode Aljabar menguji apakah nilai $z$ dapat diturunkan/dinaikkan melalui vektor $y_j = B^{-1}a_j$ dan $z_j = c_B^T y_j$.
           </p>
           <h4 style="color:var(--accent);margin-bottom:0.4rem;">✍️ Tahapan Pengerjaan</h4>
           <ol>
-            <li><b>Entering Variable (Variabel Masuk):</b>
-              <br>Pilih variabel non-basis yang memiliki <b>koefisien paling negatif ($< 0$)</b> pada baris $z$.
+            <li><b>Uji Pricing ($z_j - c_j = c_B^T y_j - c_j$):</b>
+              <br>Hitung $y_j = B^{-1}a_j$ dan $z_j = c_B^T y_j$ untuk setiap variabel nonbasis $j$.
+              <br>• Jika <b>semua $z_j - c_j \\le 0$</b> $\\implies$ Solusi sudah <b>OPTIMAL</b>.
+              <br>• Jika ada $z_j - c_j > 0$, pilih $x_k$ dengan nilai $z_k - c_k$ <b>positif terbesar</b> sebagai <b>Entering Variable (masuk basis)</b>.
             </li>
-            <li><b>Leaving Variable (Uji Rasio & Pemblok):</b>
-              <br>Bagi Ruas Kanan (RHS) dengan koefisien positif variabel masuk di setiap kendala. Pilih baris dengan <b>rasio positif terkecil</b>.
+            <li><b>Cek Ketakterbatasan & Rasio Minimum:</b>
+              <br>• Jika $y_k = B^{-1}a_k \\le 0$ seluruhnya $\\implies$ <b>SOLUSI UNBOUNDED</b>.
+              <br>• Hitung rasio $\\bar b_i / y_{ik}$ untuk $y_{ik} > 0$. Baris $r$ dengan rasio minimum menentukan <b>Leaving Variable (keluar basis)</b>.
             </li>
-            <li><b>Operasi Baris Substitusi / OBE Aljabar:</b>
-              <br>• Bagi baris pivot dengan elemen pivot.
-              <br>• Eliminasi variabel masuk dari baris kendala lainnya dan baris $z$.
-            </li>
-            <li><b>Uji Optimalitas:</b>
-              <br>Solusi mencapai <b>OPTIMAL</b> apabila seluruh koefisien variabel non-basis pada baris $z$ sudah <b>$\\ge 0$</b>.
+            <li><b>Update Basis & Matriks $B$:</b>
+              <br>Tukarkan kolom $a_{B_r}$ dengan $a_k$ pada matriks $B$, perbarui $x_B$ dan $z$, lalu ulangi dari Uji Pricing.
             </li>
           </ol>
         `
@@ -1821,17 +1683,17 @@ function getHelpData(step) {
 
     if (step === 5) {
       return {
-        title: '💡 Panduan Hasil Akhir Simplex Aljabar',
+        title: '💡 Panduan Solusi Optimal Simplex Aljabar',
         body: `
-          <h4 style="color:var(--accent);margin-bottom:0.4rem;">📘 Konversi Solusi Ke Masalah Asli</h4>
+          <h4 style="color:var(--accent);margin-bottom:0.4rem;">📘 Hasil Optimal Akhir</h4>
           <p style="margin-bottom:0.75rem;">
-            Setelah seluruh koefisien di baris $z$ bernilai $\\ge 0$, solusi optimal dibaca dari konstanta numerik sistem.
+            Setelah seluruh $z_j - c_j \\le 0$, solusi optimal akhir dibaca langsung dari vektor $x_B = B^{-1}b$ dan $z^* = c_B^T x_B$.
           </p>
           <h4 style="color:var(--accent);margin-bottom:0.4rem;">✍️ Pembacaan Solusi</h4>
           <ul>
-            <li><b>Nilai Variabel Basis ($x_1, x_2, \\dots$):</b> Nilai $= \\text{konstanta persamaan kendala basis}$.</li>
-            <li><b>Nilai Variabel Non-Basis:</b> Nilai $= 0$.</li>
-            <li><b>Nilai Maksimum Asli $z_{\\text{max}}$:</b> Nilai $= \\text{konstanta pada baris } z$.</li>
+            <li><b>Nilai Variabel Basis ($x_B$):</b> Nilai $= B^{-1}b$.</li>
+            <li><b>Nilai Variabel Non-Basis ($x_N$):</b> Nilai $= 0$.</li>
+            <li><b>Nilai Optimal ($z^*$):</b> Nilai $= c_B^T x_B$.</li>
           </ul>
         `
       };
@@ -1839,6 +1701,25 @@ function getHelpData(step) {
   }
 
   if (step === 3) {
+    if (currentMethod === 'aljabar') {
+      return {
+        title: '💡 Panduan Solusi Basis Awal (Simplex Aljabar)',
+        body: `
+          <h4 style="color:var(--accent);margin-bottom:0.4rem;">📘 1. Pemilihan Variabel Basis Awal</h4>
+          <p style="margin-bottom:0.75rem;">
+            Bebas memilih $m$ variabel dari sistem untuk membentuk variabel basis $x_B$. Syaratnya, kolom-kolom matriks basis $B = [a_{B_1}, \\dots, a_{B_m}]$ yang dibentuk oleh variabel tersebut harus saling bebas linear / nonsingular ($\\\det(B) \\neq 0$).
+          </p>
+          <h4 style="color:var(--accent);margin-bottom:0.4rem;">📘 2. Perhitungan Matriks & Solusi Basis</h4>
+          <ul style="margin-left:1.2rem; margin-bottom:0.75rem; line-height:1.6;">
+            <li><b>Matriks Basis ($B$):</b> Matriks berukuran $m \\times m$ yang elemen kolomnya diambil dari kolom variabel basis pada matriks kendala $A$.</li>
+            <li><b>Invers Matriks ($B^{-1}$):</b> Invers dari matriks $B$ sedemikian rupa sehingga $B \\cdot B^{-1} = I$.</li>
+            <li><b>Solusi Basis ($x_B$):</b> Vektor nilai variabel basis yang dihitung dengan rumus $x_B = B^{-1}b$. Variabel nonbasis bernilai $x_N = 0$.</li>
+            <li><b>Nilai Fungsi Tujuan ($z_0$):</b> Nilai fungsi tujuan awal yang dihitung dengan $z_0 = c_B^T x_B$.</li>
+          </ul>
+        `
+      };
+    }
+
     return {
       title: '💡 Panduan Tabel Simplex Awal',
       body: `
@@ -2901,307 +2782,657 @@ function renderAlgebraicSystemCard(tab, title = 'Sistem Persamaan Aljabar:') {
   `;
 }
 
+function invertMatrixFracM(B) {
+  const m = B.length;
+  const aug = [];
+  for (let i = 0; i < m; i++) {
+    const row = [];
+    for (let j = 0; j < m; j++) {
+      row.push(FracM.from(B[i][j]));
+    }
+    for (let j = 0; j < m; j++) {
+      row.push(i === j ? ONEM : ZEROM);
+    }
+    aug.push(row);
+  }
+
+  for (let k = 0; k < m; k++) {
+    let pivotRow = -1;
+    for (let i = k; i < m; i++) {
+      if (!aug[i][k].isZero()) {
+        pivotRow = i;
+        break;
+      }
+    }
+    if (pivotRow === -1) return null;
+
+    if (pivotRow !== k) {
+      [aug[k], aug[pivotRow]] = [aug[pivotRow], aug[k]];
+    }
+
+    const pivotVal = aug[k][k];
+    for (let j = 0; j < 2 * m; j++) {
+      aug[k][j] = aug[k][j].div(pivotVal);
+    }
+
+    for (let i = 0; i < m; i++) {
+      if (i !== k) {
+        const factor = aug[i][k];
+        if (!factor.isZero()) {
+          for (let j = 0; j < 2 * m; j++) {
+            aug[i][j] = aug[i][j].sub(factor.mul(aug[k][j]));
+          }
+        }
+      }
+    }
+  }
+
+  const BInv = [];
+  for (let i = 0; i < m; i++) {
+    const row = [];
+    for (let j = 0; j < m; j++) {
+      row.push(aug[i][m + j]);
+    }
+    BInv.push(row);
+  }
+  return BInv;
+}
+
+function computeBasisDetails(p, basisIndices) {
+  const tab = p.tabInitialEliminated || p.tabEliminated;
+  const numCols = tab.rows[0].length;
+  const m = p.m;
+
+  const B = [];
+  for (let i = 0; i < m; i++) {
+    const row = [];
+    for (let k = 0; k < m; k++) {
+      const colIdx = basisIndices[k] + 1;
+      row.push(tab.rows[i + 1][colIdx]);
+    }
+    B.push(row);
+  }
+
+  const BInv = invertMatrixFracM(B);
+  if (!BInv) return null;
+
+  const bVec = [];
+  for (let i = 0; i < m; i++) {
+    bVec.push(tab.rows[i + 1][numCols - 1]);
+  }
+
+  const xB = [];
+  for (let i = 0; i < m; i++) {
+    let sum = ZEROM;
+    for (let k = 0; k < m; k++) {
+      sum = sum.add(BInv[i][k].mul(bVec[k]));
+    }
+    xB.push(sum);
+  }
+
+  const cB = [];
+  for (let k = 0; k < m; k++) {
+    const varIdx = basisIndices[k];
+    const rawCoeff = p.tabRaw.rows[0][varIdx + 1];
+    cB.push(rawCoeff.neg());
+  }
+
+  let z0 = ZEROM;
+  for (let k = 0; k < m; k++) {
+    z0 = z0.add(cB[k].mul(xB[k]));
+  }
+
+  return { B, BInv, xB, z0, cB };
+}
+
+function reconstructTableauForBasis(p, basisIndices, details) {
+  const { BInv, xB, z0, cB } = details;
+  const numCols = p.tabRaw.rows[0].length;
+  const nTotal = numCols - 2;
+  const m = p.m;
+
+  const newRows = [];
+
+  const row0 = [ONEM];
+  for (let j = 0; j < nTotal; j++) {
+    const c_j = p.tabRaw.rows[0][j + 1].neg();
+    let cB_yj = ZEROM;
+    for (let i = 0; i < m; i++) {
+      let y_ij = ZEROM;
+      for (let k = 0; k < m; k++) {
+        const a_kj = p.tabRaw.rows[k + 1][j + 1];
+        y_ij = y_ij.add(BInv[i][k].mul(a_kj));
+      }
+      cB_yj = cB_yj.add(cB[i].mul(y_ij));
+    }
+    const zj_minus_cj = cB_yj.sub(c_j);
+    row0.push(zj_minus_cj);
+  }
+  row0.push(z0);
+  newRows.push(row0);
+
+  for (let i = 0; i < m; i++) {
+    const row = [ZEROM];
+    for (let j = 0; j < nTotal; j++) {
+      let y_ij = ZEROM;
+      for (let k = 0; k < m; k++) {
+        const a_kj = p.tabRaw.rows[k + 1][j + 1];
+        y_ij = y_ij.add(BInv[i][k].mul(a_kj));
+      }
+      row.push(y_ij);
+    }
+    row.push(xB[i]);
+    newRows.push(row);
+  }
+
+  p.tabEliminated = {
+    rows: newRows,
+    basis: [...basisIndices]
+  };
+}
+
+function renderBracketedMatrixInputs(rows, cols, idPrefix) {
+  let gridHtml = `
+    <div style="display:inline-flex; align-items:center; position:relative; padding:0.4rem 0.6rem; margin:0.25rem 0;">
+      <div style="position:absolute; top:0; left:0; bottom:0; width:7px; border-top:2px solid var(--text-primary); border-left:2px solid var(--text-primary); border-bottom:2px solid var(--text-primary); border-radius:5px 0 0 5px;"></div>
+      <table style="border-collapse:separate; border-spacing:0.35rem; text-align:center;">
+  `;
+  for (let i = 0; i < rows; i++) {
+    gridHtml += '<tr>';
+    for (let j = 0; j < cols; j++) {
+      gridHtml += `<td><input type="text" id="${idPrefix}_${i}_${j}" style="width:55px; text-align:center; padding:0.35rem; border-radius:var(--radius); border:1px solid var(--border-color); font-family:inherit; font-size:0.9rem;"></td>`;
+    }
+    gridHtml += '</tr>';
+  }
+  gridHtml += `
+      </table>
+      <div style="position:absolute; top:0; right:0; bottom:0; width:7px; border-top:2px solid var(--text-primary); border-right:2px solid var(--text-primary); border-bottom:2px solid var(--text-primary); border-radius:0 5px 5px 0;"></div>
+    </div>
+  `;
+  return gridHtml;
+}
+
+function renderBracketedVectorInputs(m, idPrefix) {
+  let gridHtml = `
+    <div style="display:inline-flex; align-items:center; position:relative; padding:0.4rem 0.6rem; margin:0.25rem 0;">
+      <div style="position:absolute; top:0; left:0; bottom:0; width:7px; border-top:2px solid var(--text-primary); border-left:2px solid var(--text-primary); border-bottom:2px solid var(--text-primary); border-radius:5px 0 0 5px;"></div>
+      <table style="border-collapse:separate; border-spacing:0.35rem; text-align:center;">
+  `;
+  for (let i = 0; i < m; i++) {
+    gridHtml += `<tr>
+      <td style="padding:0.15rem 0.25rem;"><input type="text" id="${idPrefix}_${i}" style="width:65px; text-align:center; padding:0.35rem; border-radius:var(--radius); border:1px solid var(--border-color); font-family:inherit; font-size:0.9rem;"></td>
+    </tr>`;
+  }
+  gridHtml += `
+      </table>
+      <div style="position:absolute; top:0; right:0; bottom:0; width:7px; border-top:2px solid var(--text-primary); border-right:2px solid var(--text-primary); border-bottom:2px solid var(--text-primary); border-radius:0 5px 5px 0;"></div>
+    </div>
+  `;
+  return gridHtml;
+}
+
+function renderBracketedVectorLabels(labels) {
+  let gridHtml = `
+    <div style="display:inline-flex; align-items:center; position:relative; padding:0.4rem 0.6rem; margin:0.25rem 0;">
+      <div style="position:absolute; top:0; left:0; bottom:0; width:7px; border-top:2px solid var(--text-primary); border-left:2px solid var(--text-primary); border-bottom:2px solid var(--text-primary); border-radius:5px 0 0 5px;"></div>
+      <table style="border-collapse:separate; border-spacing:0.35rem; text-align:center;">
+  `;
+  for (let i = 0; i < labels.length; i++) {
+    gridHtml += `<tr>
+      <td style="padding:0.25rem 0.4rem; font-weight:bold; font-size:1rem; color:var(--text-primary);">$${labels[i]}$</td>
+    </tr>`;
+  }
+  gridHtml += `
+      </table>
+      <div style="position:absolute; top:0; right:0; bottom:0; width:7px; border-top:2px solid var(--text-primary); border-right:2px solid var(--text-primary); border-bottom:2px solid var(--text-primary); border-radius:0 5px 5px 0;"></div>
+    </div>
+  `;
+  return gridHtml;
+}
+
+function getObjectiveFunctionTex(p) {
+  let objStr = '\\text{Min } z = ';
+  const varNames = Array.from({length: p.nOrig}, (_, j) => `x_{${j + 1}}`);
+  for (let j = 0; j < p.nOrig; j++) {
+    const rawC = p.objOrig[j];
+    const c = p.type === 'max' ? -rawC : rawC;
+    if (j === 0) {
+      if (c === 1) objStr += `${varNames[j]}`;
+      else if (c === -1) objStr += `-${varNames[j]}`;
+      else objStr += `${c}${varNames[j]}`;
+    } else {
+      if (c === 0) continue;
+      if (c === 1) objStr += ` + ${varNames[j]}`;
+      else if (c === -1) objStr += ` - ${varNames[j]}`;
+      else if (c > 0) objStr += ` + ${c}${varNames[j]}`;
+      else objStr += ` - ${Math.abs(c)}${varNames[j]}`;
+    }
+  }
+  return objStr;
+}
+
 function renderStep3AljabarPart1() {
   setStep(3);
   const p = prob;
   const tab = p.tabEliminated;
   const numCols = tab.rows[0].length;
   const nTotal = numCols - 2;
+  const m = p.m;
 
-  const basisSet = new Set(tab.basis);
-  const targetBasis = [];
-  const targetNonBasis = [];
-
-  for (let j = 0; j < nTotal; j++) {
-    if (basisSet.has(j)) targetBasis.push(j);
-    else targetNonBasis.push(j);
-  }
-
-  let basisCheckboxes = '';
-  let nonBasisCheckboxes = '';
-
-  for (let j = 0; j < nTotal; j++) {
-    const varName = formatSubscriptVar(j);
-    basisCheckboxes += `
-      <label style="display:inline-flex; align-items:center; gap:0.4rem; background:var(--card-bg); padding:0.4rem 0.8rem; border-radius:var(--radius); border:1px solid var(--border-color); cursor:pointer;">
-        <input type="checkbox" class="chk-basis-var" value="${j}">
-        <span>${texInline(varName)}</span>
-      </label>
-    `;
-    nonBasisCheckboxes += `
-      <label style="display:inline-flex; align-items:center; gap:0.4rem; background:var(--card-bg); padding:0.4rem 0.8rem; border-radius:var(--radius); border:1px solid var(--border-color); cursor:pointer;">
-        <input type="checkbox" class="chk-nonbasis-var" value="${j}">
-        <span>${texInline(varName)}</span>
-      </label>
-    `;
-  }
+  const defaultBasisSet = new Set(p.initialBasis || tab.basis);
 
   const html = `<div class="card" id="step3aAljabarCard">
     <div class="card-title">
-      <span>📌 Tentukan Variabel Basis & Non-Basis Awal</span>
+      <span>📌 Pemilihan Variabel Basis Awal</span>
       <div class="card-title-actions">
         <button class="btn-skip" id="btnSkipAljabar3a">⚡ Skip (Kerjakan)</button>
         <button class="btn btn-sm btn-outline-secondary btn-undo-step" onclick="undoPreviousStep()">↩️ Undo</button>
         <button class="btn-help" onclick="openHelpDrawer(3)">❓ Bagaimana caranya?</button>
       </div>
     </div>
-    <div style="margin-bottom:1rem; color:var(--text-secondary); font-size:0.88rem; line-height:1.6;">
-      Pada sistem linear baku awal, pilih variabel mana yang bertindak sebagai <b>Variabel Basis</b> (memiliki kolom matriks identitas) dan <b>Variabel Non-Basis</b> (diset bernilai 0):
-    </div>
-
-    <div style="margin-bottom:1.25rem;">
-      <div style="font-weight:bold; color:var(--text-primary); margin-bottom:0.5rem;">Pilih Variabel Basis Awal:</div>
-      <div style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-bottom:1.25rem;">
-        ${basisCheckboxes}
+    
+    <div style="background:var(--card-bg); padding:1.1rem; border-radius:var(--radius); border:1px solid var(--border-color); margin-bottom:1.25rem;">
+      <div style="overflow-x:auto; margin-bottom:1rem;">
+        <table id="tableBasisSelection" class="tableau" style="width:100%; border-collapse:collapse; font-size:0.92rem; text-align:center;">
+          <thead>
+            <tr>
+              <th style="background:var(--bg-primary); width:90px;">Sistem</th>
+              ${Array.from({length: nTotal}, (_, j) => `
+                <th class="col-var-${j}" style="transition:background 0.2s;">
+                  $${formatSubscriptVar(j)}$
+                </th>
+              `).join('')}
+              <th style="border-left:2px solid var(--accent); background:var(--bg-primary); width:80px;">$b$</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${Array.from({length: m}, (_, i) => `
+              <tr>
+                <td style="font-weight:bold; background:var(--bg-primary); font-size:0.85rem; color:var(--text-secondary);">Kendala ${i + 1}</td>
+                ${Array.from({length: nTotal}, (_, j) => `
+                  <td class="col-var-${j}" style="transition:background 0.2s;">
+                    ${tab.rows[i + 1][j + 1].toString()}
+                  </td>
+                `).join('')}
+                <td style="border-left:2px solid var(--accent); font-weight:bold; background:var(--bg-primary);">
+                  ${tab.rows[i + 1][numCols - 1].toString()}
+                </td>
+              </tr>
+            `).join('')}
+            <tr style="background:rgba(124,58,237,0.04);">
+              <td style="font-weight:bold; font-size:0.85rem; color:var(--accent);">Basis ($x_B$)</td>
+              ${Array.from({length: nTotal}, (_, j) => `
+                <td class="col-var-${j}" style="padding:0.55rem 0.25rem; transition:background 0.2s;">
+                  <label style="cursor:pointer; display:inline-flex; align-items:center; justify-content:center; width:100%; user-select:none;">
+                    <input type="checkbox" class="chk-basis-var" data-var="${j}" style="width:16px; height:16px; cursor:pointer;">
+                  </label>
+                </td>
+              `).join('')}
+              <td style="border-left:2px solid var(--accent); background:var(--bg-primary);"></td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <div style="font-weight:bold; color:var(--text-primary); margin-bottom:0.5rem;">Pilih Variabel Non-Basis Awal (= 0):</div>
-      <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
-        ${nonBasisCheckboxes}
+      <div style="font-size:0.92rem; font-weight:bold; color:var(--accent); text-align:center; margin-top:0.75rem;">
+        Fungsi Objektif: $${getObjectiveFunctionTex(p)}$
       </div>
     </div>
+
+    <div id="feedbackAljabarBasis1" class="feedback"></div>
 
     <div class="btn-row">
-      <button class="btn btn-primary" id="btnCheckAljabar3a">Periksa Variabel Basis & Non-Basis</button>
+      <button class="btn btn-primary" id="btnCheckAljabar3a">Verifikasi & Konfirmasi Basis →</button>
     </div>
-    <div id="feedbackAljabar3a" class="feedback"></div>
   </div>`;
 
   const container = appendBlock(html);
 
-  if ($('btnSkipAljabar3a')) {
-    $('btnSkipAljabar3a').onclick = () => {
-      container.querySelectorAll('.chk-basis-var').forEach(chk => {
-        chk.checked = targetBasis.includes(parseInt(chk.value));
-      });
-      container.querySelectorAll('.chk-nonbasis-var').forEach(chk => {
-        chk.checked = targetNonBasis.includes(parseInt(chk.value));
-      });
-      $('btnCheckAljabar3a').click();
-    };
+  const chks = container.querySelectorAll('.chk-basis-var');
+  const cntText = $('cntBasisText');
+
+  function updateColumnHighlights() {
+    const selectedIndices = new Set();
+    chks.forEach(chk => {
+      const varIdx = parseInt(chk.dataset.var);
+      const cells = container.querySelectorAll(`.col-var-${varIdx}`);
+      if (chk.checked) {
+        selectedIndices.add(varIdx);
+        cells.forEach(cell => {
+          cell.style.background = 'rgba(124,58,237,0.12)';
+          cell.style.fontWeight = 'bold';
+          cell.style.color = 'var(--accent)';
+        });
+      } else {
+        cells.forEach(cell => {
+          cell.style.background = 'transparent';
+          cell.style.fontWeight = 'normal';
+          cell.style.color = 'inherit';
+        });
+      }
+    });
+    if (cntText) cntText.textContent = selectedIndices.size;
+  }
+
+  chks.forEach(chk => {
+    chk.onchange = updateColumnHighlights;
+  });
+
+  updateColumnHighlights();
+
+  function processBasisSelection(selectedIndices) {
+    const fb = $('feedbackAljabarBasis1');
+    if (selectedIndices.length !== p.m) {
+      if (fb) {
+        fb.className = 'feedback show error';
+        fb.textContent = `❌ Jumlah variabel basis harus tepat ${p.m} variabel. (Saat ini dipilih ${selectedIndices.length}).`;
+      }
+      return false;
+    }
+
+    const details = computeBasisDetails(p, selectedIndices);
+    if (!details) {
+      if (fb) {
+        fb.className = 'feedback show error';
+        fb.textContent = `❌ Variabel yang dipilih tidak membentuk basis (Matriks B singular / det(B) = 0). Pilih kombinasi kolom yang bebas linear!`;
+      }
+      return false;
+    }
+
+    reconstructTableauForBasis(p, selectedIndices, details);
+
+    if (fb) {
+      fb.className = 'feedback show success';
+      fb.textContent = `✅ Basis valid! Melanjutkan ke input matriks B, B⁻¹, x_B, dan z_0...`;
+    }
+    disableContainer(container);
+    setTimeout(() => renderStep3AljabarPart2(selectedIndices, details), 600);
+    return true;
   }
 
   $('btnCheckAljabar3a').onclick = () => {
-    const selectedBasis = Array.from(container.querySelectorAll('.chk-basis-var:checked')).map(el => parseInt(el.value));
-    const selectedNonBasis = Array.from(container.querySelectorAll('.chk-nonbasis-var:checked')).map(el => parseInt(el.value));
-    const fb = $('feedbackAljabar3a');
-
-    const basisMatch = selectedBasis.length === targetBasis.length && selectedBasis.every(v => targetBasis.includes(v));
-    const nonBasisMatch = selectedNonBasis.length === targetNonBasis.length && selectedNonBasis.every(v => targetNonBasis.includes(v));
-
-    if (basisMatch && nonBasisMatch) {
-      fb.className = 'feedback show success';
-      fb.textContent = '✅ Benar! Variabel basis & non-basis awal sudah ditentukan dengan tepat. Lanjut susun persamaan aljabar.';
-      disableContainer(container);
-      setTimeout(renderStep3AljabarPart2, 600);
-    } else {
-      fb.className = 'feedback show error';
-      fb.textContent = '❌ Pilihan variabel belum tepat. Pastikan variabel basis sesuai dengan slack/artifisial basis awal dan variabel non-basis adalah variabel keputusan asal.';
-    }
+    const selected = Array.from(chks).filter(c => c.checked).map(c => parseInt(c.dataset.var));
+    processBasisSelection(selected);
   };
+
+  if ($('btnSkipAljabar3a')) {
+    $('btnSkipAljabar3a').onclick = () => {
+      const defaultBasis = Array.from(defaultBasisSet);
+      chks.forEach(c => {
+        c.checked = defaultBasisSet.has(parseInt(c.dataset.var));
+      });
+      updateColumnHighlights();
+      processBasisSelection(defaultBasis);
+    };
+  }
 }
 
-function renderStep3AljabarPart2() {
+function renderIterAljabarUpdateBasis() {
+  setStep(3);
   const p = prob;
-  const tab = p.tabEliminated;
+  const iter = p.iterations[currentIterIdx];
+  const tab = iter.tab;
   const numCols = tab.rows[0].length;
   const nTotal = numCols - 2;
+  const m = p.m;
 
-  const basisSet = new Set(tab.basis);
-  const nonBasisVars = [];
+  const basisDetails = computeBasisDetails(p, tab.basis);
+  if (!basisDetails) return;
+
+  const newBasisSet = new Set(tab.basis);
+
+  const bGridHtml = renderBracketedMatrixInputs(m, m, `inpB_${currentIterIdx}`);
+  const bInvGridHtml = renderBracketedMatrixInputs(m, m, `inpBInv_${currentIterIdx}`);
+  const xbVecHtml = renderBracketedVectorInputs(m, `inpXb_${currentIterIdx}`);
+
+  // Non-basic variables list for objective function equation
+  const nonBasisList = [];
   for (let j = 0; j < nTotal; j++) {
-    if (!basisSet.has(j)) nonBasisVars.push(j);
+    if (!newBasisSet.has(j)) {
+      nonBasisList.push({ idx: j, col: j + 1, name: formatSubscriptVar(j) });
+    }
   }
 
-  // Objective Function Input Line (Persamaan Baris z: z + c1 x1 + c2 x2 = RHS)
-  let objInputHtml = `
-    <div class="std-form-line" style="margin-bottom:0.8rem; font-size:1.05rem;">
-      <span style="font-weight:bold; margin-right:0.15rem;">z</span>
-  `;
-  nonBasisVars.forEach(nbIdx => {
-    const nbVarName = formatSubscriptVar(nbIdx);
-    objInputHtml += `
-      <span>+</span>
-      <input type="text" id="aljObjCoeff_${nbIdx}" style="width:50px; text-align:center;">
-      <span>${texInline(nbVarName)}</span>
+  let nonBasisInputsHtml = '';
+  nonBasisList.forEach((c, k) => {
+    nonBasisInputsHtml += `
+      <span style="margin:0 0.15rem;">−</span>
+      <input type="text" id="inpNewCoeff_${currentIterIdx}_${k}" placeholder="${c.name}" style="width:75px; text-align:center; padding:0.35rem; border-radius:var(--radius); border:1px solid var(--border-color); font-family:inherit; font-size:0.9rem;">
+      <span style="color:var(--text-primary);">$${c.name}$</span>
     `;
   });
-  objInputHtml += `
-      <span>=</span>
-      <input type="text" id="aljObjConst" style="width:50px; text-align:center;">
-    </div>
-  `;
 
-  // Constraint Equations Input Lines
-  let eqInputsHtml = '';
-  for (let i = 1; i < tab.rows.length; i++) {
-    const basisVarIdx = tab.basis[i - 1];
-    const basisVarName = formatSubscriptVar(basisVarIdx);
+  const cardTitle = currentIterIdx === 0 
+    ? `📌 Input Matriks $B$, $B^{-1}$, Solusi $x_B$ & Nilai $z_0$`
+    : `📌 Iterasi Aljabar ${currentIterIdx + 1} • Perbarui Matriks $B$, $B^{-1}$, Solusi $x_B$ & Persamaan Fungsi Objektif $z$`;
 
-    let rowInputs = `
-      <div class="std-form-line" style="margin-bottom:0.6rem; font-size:1.05rem;">
-        <span style="font-weight:bold; margin-right:0.15rem;">${texInline(basisVarName)} =</span>
-        <input type="text" id="aljConst_${i}" style="width:50px; text-align:center;">
-    `;
-
-    nonBasisVars.forEach(nbIdx => {
-      const nbVarName = formatSubscriptVar(nbIdx);
-      rowInputs += `
-        <span>+</span>
-        <input type="text" id="aljCoeff_${i}_${nbIdx}" style="width:50px; text-align:center;">
-        <span>${texInline(nbVarName)}</span>
-      `;
-    });
-
-    rowInputs += `</div>`;
-    eqInputsHtml += rowInputs;
-  }
-
-  const allVarNames = [];
-  for (let j = 0; j < nTotal; j++) allVarNames.push(formatSubscriptVar(j));
-  const nonNegTex = texInline(`${allVarNames.join(', ')} \\geq 0`);
-
-  const html = `<div class="card" id="step3bAljabarCard">
+  const html = `<div class="card" id="basisUpdateCard_${currentIterIdx}">
     <div class="card-title">
-      <span>✍️ Input Sistem Persamaan Kendala Aljabar</span>
+      <span>${cardTitle}</span>
       <div class="card-title-actions">
-        <button class="btn-skip" id="btnSkipAljabar3b">⚡ Skip (Kerjakan)</button>
+        <button class="btn-skip" id="btnSkipAljabarBasis_${currentIterIdx}">⚡ Skip (Kerjakan)</button>
         <button class="btn btn-sm btn-outline-secondary btn-undo-step" onclick="undoPreviousStep()">↩️ Undo</button>
         <button class="btn-help" onclick="openHelpDrawer(3)">❓ Bagaimana caranya?</button>
       </div>
     </div>
 
-    <div style="font-weight:bold; margin-bottom:0.75rem; font-size:1rem;">Bentuk Aljabar Persamaan Baris z & Kendala:</div>
+    <div style="background:var(--card-bg); padding:1.1rem; border-radius:var(--radius); border:1px solid var(--border-color); margin-bottom:1.25rem;">
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:1.25rem; margin-bottom:1.25rem;">
+        <div style="background:var(--bg-primary); padding:0.85rem 1rem; border-radius:var(--radius); border:1px solid var(--border-color); text-align:center;">
+          <div style="font-weight:bold; font-size:1.05rem; color:var(--text-primary); margin-bottom:0.5rem;">
+            Matriks $B$
+          </div>
+          ${bGridHtml}
+        </div>
 
-    ${objInputHtml}
+        <div style="background:var(--bg-primary); padding:0.85rem 1rem; border-radius:var(--radius); border:1px solid var(--border-color); text-align:center;">
+          <div style="font-weight:bold; font-size:1.05rem; color:var(--text-primary); margin-bottom:0.5rem;">
+            Matriks $B^{-1}$
+          </div>
+          ${bInvGridHtml}
+        </div>
+      </div>
 
-    <div style="margin:0.75rem 0 0.5rem 0; color:var(--text-secondary);">dengan kendala:</div>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:1.25rem; margin-bottom:1.25rem;">
+        <div style="background:var(--bg-primary); padding:0.85rem 1rem; border-radius:var(--radius); border:1px solid var(--border-color); text-align:center;">
+          <div style="font-weight:bold; font-size:1.05rem; color:var(--text-primary); margin-bottom:0.5rem;">
+            Variabel Basis $x_B$
+          </div>
+          <div style="display:inline-flex; align-items:center; justify-content:center; gap:0.4rem;">
+            <span style="font-weight:bold; font-size:0.95rem; color:var(--text-primary);">$x_B =$</span>
+            ${xbVecHtml}
+          </div>
+        </div>
 
-    ${eqInputsHtml}
+        <div style="background:var(--bg-primary); padding:0.85rem 1rem; border-radius:var(--radius); border:1px solid var(--border-color); text-align:center;">
+          <div style="font-weight:bold; font-size:1.05rem; color:var(--text-primary); margin-bottom:0.5rem;">
+            Nilai $z_0$
+          </div>
+          <div style="display:flex; align-items:center; justify-content:center; gap:0.4rem; margin-top:0.75rem;">
+            <span style="font-weight:bold; font-size:0.95rem; color:var(--text-primary);">$z_0 =$</span>
+            <input type="text" id="inpZ0_${currentIterIdx}" style="width:90px; text-align:center; padding:0.35rem; border-radius:var(--radius); border:1px solid var(--border-color); font-family:inherit; font-size:0.9rem;">
+          </div>
+        </div>
+      </div>
 
-    <div class="btn-row" style="margin-top:1.5rem;">
-      <button class="btn btn-primary" id="btnCheckAljabar3b">Periksa Persamaan Aljabar</button>
+      <div style="background:var(--bg-primary); padding:0.85rem 1rem; border-radius:var(--radius); border:1px solid var(--border-color); text-align:center;">
+        <div style="font-weight:bold; font-size:1.05rem; color:var(--text-primary); margin-bottom:0.5rem;">
+          Persamaan Fungsi Objektif Baru ($z$)
+        </div>
+        <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:0.4rem; font-size:1.05rem; font-weight:bold; padding:0.4rem 0.5rem;">
+          <span style="color:var(--text-primary);">$z =$</span>
+          <input type="text" id="inpNewZ0_${currentIterIdx}" placeholder="z₀" style="width:80px; text-align:center; padding:0.35rem; border-radius:var(--radius); border:1px solid var(--border-color); font-family:inherit; font-size:0.9rem;">
+          ${nonBasisInputsHtml}
+        </div>
+      </div>
     </div>
-    <div id="feedbackAljabar3b" class="feedback"></div>
+
+    <div id="feedbackAljabarBasis_${currentIterIdx}" class="feedback"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btnCheckAljabarBasis_${currentIterIdx}">Verifikasi & Lanjut ke Pricing →</button>
+    </div>
   </div>`;
 
   const container = appendBlock(html);
 
-  if ($('btnSkipAljabar3b')) {
-    $('btnSkipAljabar3b').onclick = () => {
-      // Auto-fill Objective inputs
-      const expectedObjConst = tab.rows[0][numCols - 1];
-      if ($('aljObjConst')) $('aljObjConst').value = expectedObjConst.isZero() ? '0' : expectedObjConst.toString();
-      nonBasisVars.forEach(nbIdx => {
-        const expectedCoeff = tab.rows[0][nbIdx + 1];
-        if ($(`aljObjCoeff_${nbIdx}`)) $(`aljObjCoeff_${nbIdx}`).value = expectedCoeff.toString();
-      });
-
-      // Auto-fill Constraint inputs
-      for (let i = 1; i < tab.rows.length; i++) {
-        const bVal = tab.rows[i][numCols - 1];
-        if ($(`aljConst_${i}`)) $(`aljConst_${i}`).value = bVal.toString();
-
-        nonBasisVars.forEach(nbIdx => {
-          const coeff = tab.rows[i][nbIdx + 1];
-          const negCoeff = coeff.neg();
-          if ($(`aljCoeff_${i}_${nbIdx}`)) $(`aljCoeff_${i}_${nbIdx}`).value = negCoeff.toString();
-        });
-      }
-      $('btnCheckAljabar3b').click();
-    };
-  }
-
-  $('btnCheckAljabar3b').onclick = () => {
+  function checkBasisUpdateInputs() {
+    const fb = $(`feedbackAljabarBasis_${currentIterIdx}`);
     let allOk = true;
-    const fb = $('feedbackAljabar3b');
 
-    // 1. Check Objective inputs
-    const objConstInp = $('aljObjConst');
-    const expectedObjConst = tab.rows[0][numCols - 1];
-    try {
-      const userValStr = objConstInp.value.trim() === '' ? '0' : objConstInp.value.trim();
-      const userObjConst = FracM.from(userValStr);
-      if (!userObjConst.eq(expectedObjConst)) {
-        allOk = false;
-        objConstInp.classList.add('wrong');
-      } else {
-        objConstInp.classList.remove('wrong');
-        objConstInp.classList.add('correct');
+    // Validate Matrix B
+    for (let i = 0; i < m; i++) {
+      for (let j = 0; j < m; j++) {
+        const inp = $(`inpB_${currentIterIdx}_${i}_${j}`);
+        if (inp) {
+          const val = parseFracWithM(inp.value);
+          const exp = basisDetails.B[i][j];
+          if (!val || !val.eq(exp)) {
+            allOk = false;
+            inp.classList.add('wrong');
+            inp.classList.remove('correct');
+          } else {
+            inp.classList.add('correct');
+            inp.classList.remove('wrong');
+          }
+        }
       }
-    } catch (e) {
-      allOk = false;
-      objConstInp.classList.add('wrong');
     }
 
-    nonBasisVars.forEach(nbIdx => {
-      const objCoeffInp = $(`aljObjCoeff_${nbIdx}`);
-      const expectedCoeff = tab.rows[0][nbIdx + 1];
-      try {
-        const userObjCoeff = FracM.from(objCoeffInp.value.trim());
-        if (!userObjCoeff.eq(expectedCoeff)) {
-          allOk = false;
-          objCoeffInp.classList.add('wrong');
-        } else {
-          objCoeffInp.classList.remove('wrong');
-          objCoeffInp.classList.add('correct');
+    // Validate Matrix B^-1
+    for (let i = 0; i < m; i++) {
+      for (let j = 0; j < m; j++) {
+        const inp = $(`inpBInv_${currentIterIdx}_${i}_${j}`);
+        if (inp) {
+          const val = parseFracWithM(inp.value);
+          const exp = basisDetails.BInv[i][j];
+          if (!val || !val.eq(exp)) {
+            allOk = false;
+            inp.classList.add('wrong');
+            inp.classList.remove('correct');
+          } else {
+            inp.classList.add('correct');
+            inp.classList.remove('wrong');
+          }
         }
-      } catch (e) {
+      }
+    }
+
+    // Validate Vector x_B
+    for (let i = 0; i < m; i++) {
+      const inp = $(`inpXb_${currentIterIdx}_${i}`);
+      if (inp) {
+        const val = parseFracWithM(inp.value);
+        const exp = tab.rows[i + 1][numCols - 1];
+        if (!val || !val.eq(exp)) {
+          allOk = false;
+          inp.classList.add('wrong');
+          inp.classList.remove('correct');
+        } else {
+          inp.classList.add('correct');
+          inp.classList.remove('wrong');
+        }
+      }
+    }
+
+    // Validate z0 box
+    const inpZ0Box = $(`inpZ0_${currentIterIdx}`);
+    if (inpZ0Box) {
+      const val = parseFracWithM(inpZ0Box.value);
+      const exp = tab.rows[0][numCols - 1];
+      if (!val || !val.eq(exp)) {
         allOk = false;
-        objCoeffInp.classList.add('wrong');
+        inpZ0Box.classList.add('wrong');
+        inpZ0Box.classList.remove('correct');
+      } else {
+        inpZ0Box.classList.add('correct');
+        inpZ0Box.classList.remove('wrong');
+      }
+    }
+
+    // Validate z0 in objective equation
+    const inpZ0Eq = $(`inpNewZ0_${currentIterIdx}`);
+    if (inpZ0Eq) {
+      const val = parseFracWithM(inpZ0Eq.value);
+      const exp = tab.rows[0][numCols - 1];
+      if (!val || !val.eq(exp)) {
+        allOk = false;
+        inpZ0Eq.classList.add('wrong');
+        inpZ0Eq.classList.remove('correct');
+      } else {
+        inpZ0Eq.classList.add('correct');
+        inpZ0Eq.classList.remove('wrong');
+      }
+    }
+
+    // Validate non-basic variable coefficients in objective equation
+    nonBasisList.forEach((c, k) => {
+      const inp = $(`inpNewCoeff_${currentIterIdx}_${k}`);
+      if (inp) {
+        const val = parseFracWithM(inp.value);
+        const exp = tab.rows[0][c.col];
+        if (!val || !val.eq(exp)) {
+          allOk = false;
+          inp.classList.add('wrong');
+          inp.classList.remove('correct');
+        } else {
+          inp.classList.add('correct');
+          inp.classList.remove('wrong');
+        }
       }
     });
 
-    // 2. Check Constraint inputs
-    for (let i = 1; i < tab.rows.length; i++) {
-      const constInp = $(`aljConst_${i}`);
-      const expectedConst = tab.rows[i][numCols - 1];
+    if (allOk) {
+      if (fb) {
+        fb.className = 'feedback show success';
+        fb.textContent = '✅ Benar! Seluruh nilai matriks B, B⁻¹, x_B, z_0, dan persamaan fungsi objektif z terverifikasi.';
+      }
+      disableContainer(container);
+      setTimeout(renderIterAljabarPickEnter, 600);
+    } else {
+      if (fb) {
+        fb.className = 'feedback show error';
+        fb.textContent = '❌ Beberapa nilai masih belum tepat. Silakan periksa kolom/baris yang ditandai merah.';
+      }
+    }
+  }
 
-      try {
-        const userConst = FracM.from(constInp.value.trim());
-        if (!userConst.eq(expectedConst)) {
-          allOk = false;
-          constInp.classList.add('wrong');
-        } else {
-          constInp.classList.remove('wrong');
-          constInp.classList.add('correct');
+  $(`btnCheckAljabarBasis_${currentIterIdx}`).onclick = checkBasisUpdateInputs;
+
+  if ($(`btnSkipAljabarBasis_${currentIterIdx}`)) {
+    $(`btnSkipAljabarBasis_${currentIterIdx}`).onclick = () => {
+      for (let i = 0; i < m; i++) {
+        for (let j = 0; j < m; j++) {
+          const inpB = $(`inpB_${currentIterIdx}_${i}_${j}`);
+          if (inpB) inpB.value = basisDetails.B[i][j].toString();
+          const inpBInv = $(`inpBInv_${currentIterIdx}_${i}_${j}`);
+          if (inpBInv) inpBInv.value = basisDetails.BInv[i][j].toString();
         }
-      } catch (e) {
-        allOk = false;
-        constInp.classList.add('wrong');
       }
 
-      nonBasisVars.forEach(nbIdx => {
-        const coeffInp = $(`aljCoeff_${i}_${nbIdx}`);
-        const expectedCoeff = tab.rows[i][nbIdx + 1].neg();
+      for (let i = 0; i < m; i++) {
+        const inpXb = $(`inpXb_${currentIterIdx}_${i}`);
+        if (inpXb) inpXb.value = tab.rows[i + 1][numCols - 1].toString();
+      }
 
-        try {
-          const userCoeff = FracM.from(coeffInp.value.trim());
-          if (!userCoeff.eq(expectedCoeff)) {
-            allOk = false;
-            coeffInp.classList.add('wrong');
-          } else {
-            coeffInp.classList.remove('wrong');
-            coeffInp.classList.add('correct');
-          }
-        } catch (e) {
-          allOk = false;
-          coeffInp.classList.add('wrong');
-        }
+      const inpZ0Box = $(`inpZ0_${currentIterIdx}`);
+      if (inpZ0Box) inpZ0Box.value = tab.rows[0][numCols - 1].toString();
+
+      const inpZ0Eq = $(`inpNewZ0_${currentIterIdx}`);
+      if (inpZ0Eq) inpZ0Eq.value = tab.rows[0][numCols - 1].toString();
+
+      nonBasisList.forEach((c, k) => {
+        const inp = $(`inpNewCoeff_${currentIterIdx}_${k}`);
+        if (inp) inp.value = tab.rows[0][c.col].toString();
       });
-    }
 
-    if (allOk) {
-      fb.className = 'feedback show success';
-      fb.textContent = '✅ Benar! Persamaan fungsi objektif dan kendala aljabar awal berhasil disusun dengan tepat.';
-      disableContainer(container);
-      currentIterIdx = 0;
-      setTimeout(renderIterCheckOptimal, 600);
-    } else {
-      fb.className = 'feedback show error';
-      fb.textContent = '❌ Masih ada isian koefisien/konstanta yang belum tepat. Periksa kembali koefisien fungsi objektif dan persamaan kendala aljabar.';
-    }
-  };
+      checkBasisUpdateInputs();
+    };
+  }
+}
+
+function renderStep3AljabarPart2() {
+  renderIterAljabarUpdateBasis();
 }
 
 function renderStep3Aljabar() {
@@ -3685,6 +3916,11 @@ function renderInfeasibleConclusionCard() {
   renderMathIn(el);
 }
 
+function renderIterAljabarCheckOptimal() {
+  setStep(4);
+  renderIterAljabarPickEnter();
+}
+
 function renderIterAljabarPickEnter() {
   const p = prob;
   const iter = p.iterations[currentIterIdx];
@@ -3693,55 +3929,76 @@ function renderIterAljabarPickEnter() {
   const numCols = row0.length;
   const basisSet = new Set(tab.basis);
   const nTotal = numCols - 2;
+  const m = p.m;
 
   const nonBasisCandidates = [];
+  let existsPositiveZjMinusCj = false;
+
   for (let j = 1; j <= nTotal; j++) {
     const varIdx = j - 1;
     if (!basisSet.has(varIdx)) {
-      nonBasisCandidates.push({ col: j, varIdx, name: formatSubscriptVar(varIdx), coeff: row0[j] });
+      const col = j;
+      const expY = [];
+      for (let i = 0; i < m; i++) {
+        expY.push(tab.rows[i + 1][col]);
+      }
+
+      const expZjMinusCj = tab.rows[0][col];
+      if (expZjMinusCj.isPos()) {
+        existsPositiveZjMinusCj = true;
+      }
+
+      const c_j = p.tabRaw.rows[0][col].neg();
+      const expZ = expZjMinusCj.add(c_j);
+
+      nonBasisCandidates.push({
+        col: j,
+        varIdx,
+        name: formatSubscriptVar(varIdx),
+        expY,
+        expZ,
+        expZjMinusCj
+      });
     }
   }
 
-  const objEq = formatAlgebraicObjective(tab);
-
-  let candidatesCardsHtml = nonBasisCandidates.map(c => `
-    <button class="btn btn-outline-secondary btn-algebra-enter" data-col="${c.col}" style="font-weight:bold; padding:0.5rem 1rem; font-size:0.92rem;">
-      ${texInline(c.name)} (Masuk)
-    </button>
-  `).join('');
-
-  // Pre-calculate system equations for Section 2 (Leaving Variable)
   const targetEnterCol = iter.enterCol !== undefined ? iter.enterCol : findEntering(tab);
-  const enterVarName = formatSubscriptVar(targetEnterCol - 1);
-  const targetLeaveRow = findLeaving(tab, targetEnterCol);
-  const isUnbounded = iter.unbounded || targetLeaveRow === -1;
+  const targetLeaveRow = targetEnterCol > 0 ? findLeaving(tab, targetEnterCol) : -1;
 
-  const eqLines = [];
-  for (let i = 1; i < tab.rows.length; i++) {
-    eqLines.push(formatAlgebraicEq(tab, i));
-  }
-  const systemEqLatex = `\\begin{aligned}\n${eqLines.join(' \\\\\n')}\n\\end{aligned}`;
+  let pricingTableHtml = `
+    <table class="tableau" style="width:100%; margin-bottom:1rem; font-size:0.88rem; text-align:center;">
+      <thead>
+        <tr>
+          <th style="width:70px;">$x_j$</th>
+          <th>$y_j$</th>
+          <th style="width:90px;">$z_j$</th>
+          <th style="width:100px;">$z_j - c_j$</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
 
-  let leaveButtonsHtml = '';
-  for (let i = 1; i < tab.rows.length; i++) {
-    const basisVarName = formatSubscriptVar(tab.basis[i - 1]);
-    leaveButtonsHtml += `
-      <button class="btn btn-outline-secondary btn-algebra-leave" data-row="${i}" style="font-weight:bold; padding:0.5rem 1rem; font-size:0.92rem; opacity:0.6;" disabled>
-        ${texInline(basisVarName)} (Keluar)
-      </button>
+  nonBasisCandidates.forEach(c => {
+    pricingTableHtml += `
+      <tr class="pricing-row" data-col="${c.col}" style="transition:all 0.2s;">
+        <td style="font-weight:bold; vertical-align:middle;">$${c.name}$</td>
+        <td style="vertical-align:middle;">
+          ${renderBracketedVectorInputs(m, `inpY_${currentIterIdx}_${c.col}`)}
+        </td>
+        <td style="vertical-align:middle;">
+          <input type="text" id="inpZ_${currentIterIdx}_${c.col}" style="width:70px; text-align:center; padding:0.35rem; border-radius:var(--radius); border:1px solid var(--border-color); font-family:inherit; font-size:0.9rem;">
+        </td>
+        <td style="vertical-align:middle;">
+          <input type="text" id="inpZjMinusCj_${currentIterIdx}_${c.col}" style="width:80px; text-align:center; padding:0.35rem; border-radius:var(--radius); border:1px solid var(--border-color); font-family:inherit; font-size:0.9rem;">
+        </td>
+      </tr>
     `;
-  }
+  });
+  pricingTableHtml += `</tbody></table>`;
 
-  if (isUnbounded) {
-    leaveButtonsHtml += `
-      <button class="btn btn-outline-danger" id="btnUnboundedAljabar_${currentIterIdx}" style="font-weight:bold; padding:0.5rem 1rem; opacity:0.6;" disabled>
-        🚫 Tidak Ada Batasan Rasio (Solusi Tidak Terbatas / Unbounded)
-      </button>`;
-  }
-
-  const html = `<div class="card" id="iterAljabarCard_${currentIterIdx}">
+  const html = `<div class="card" id="iterAljabarEnterCard_${currentIterIdx}">
     <div class="card-title">
-      <span>Iterasi Aljabar ${currentIterIdx + 1} • Pemilihan Variabel Masuk & Keluar</span>
+      <span>📌 Iterasi Aljabar ${currentIterIdx + 1} • Penentuan $y_j, z_j, z_j - c_j$</span>
       <div class="card-title-actions">
         <button class="btn-skip" id="btnSkipAljabarEnter_${currentIterIdx}">⚡ Skip (Kerjakan)</button>
         <button class="btn btn-sm btn-outline-secondary btn-undo-step" onclick="undoPreviousStep()">↩️ Undo</button>
@@ -3749,157 +4006,469 @@ function renderIterAljabarPickEnter() {
       </div>
     </div>
 
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:1.5rem; align-items:start;">
-      <!-- LEFT COLUMN: ENTERING VARIABLE -->
-      <div id="secAljabarEnter_${currentIterIdx}">
-        <div style="font-weight:bold; margin-bottom:0.6rem; font-size:0.95rem;">
-          1. Pilih Variabel Masuk (Entering Variable):
-        </div>
-        <div style="font-size:1.05rem; font-weight:bold; margin-bottom:1rem; background:var(--bg-primary); padding:0.65rem 0.85rem; border-radius:var(--radius); border:1px solid var(--border-color);">
-          ${texInline(objEq)}
-        </div>
-        <div style="display:flex; flex-wrap:wrap; gap:0.75rem; margin-bottom:1rem;">
-          ${candidatesCardsHtml}
-        </div>
-        <div id="feedbackAljabarEnter_${currentIterIdx}" class="feedback"></div>
-      </div>
+    <div style="font-weight:bold; margin-bottom:0.6rem; font-size:0.95rem; color:var(--accent);">
+      Hitung $y_j, z_j, z_j - c_j$ untuk Variabel Nonbasis:
+    </div>
+    ${pricingTableHtml}
+    
+    <div style="margin-bottom:1rem;">
+      <button class="btn btn-primary" id="btnCheckPricing_${currentIterIdx}">Verifikasi $y_j, z_j, z_j - c_j$ →</button>
+    </div>
 
-      <!-- RIGHT COLUMN: LEAVING VARIABLE -->
-      <div id="secAljabarLeave_${currentIterIdx}">
-        <div style="font-weight:bold; margin-bottom:0.6rem; font-size:0.95rem;">
-          2. Uji Rasio & Pilih Variabel Keluar (Leaving Variable / Pemblok):
-        </div>
-        <div style="font-size:1.05rem; font-weight:bold; margin-bottom:1rem; background:var(--bg-primary); padding:0.65rem 0.85rem; border-radius:var(--radius); border:1px solid var(--border-color);">
-          ${texInline(systemEqLatex)}
-        </div>
-        <div style="display:flex; flex-wrap:wrap; gap:0.75rem; margin-bottom:1rem;" id="eqRatioContainer_${currentIterIdx}">
-          ${leaveButtonsHtml}
-        </div>
-        <div id="feedbackAljabarLeave_${currentIterIdx}" class="feedback"></div>
+    <div id="feedbackAljabarEnter_${currentIterIdx}" class="feedback"></div>
+
+    <div id="secOptCheck_${currentIterIdx}" style="display:none; margin-top:1.25rem; border-top:1px dashed var(--border-color); padding-top:1rem;">
+      <div style="font-weight:bold; margin-bottom:0.75rem; font-size:0.95rem; color:var(--accent);">
+        Berdasarkan tabel di atas, apakah sistem ini sudah optimal / terhenti?
       </div>
+      <div style="display:flex; flex-wrap:wrap; gap:0.6rem; margin-bottom:0.8rem;">
+        <button class="btn btn-outline-success" id="btnOptYa_${currentIterIdx}">✅ Ya, Optimal ($z_j - c_j \\le 0$)</button>
+        <button class="btn btn-outline-warning" id="btnOptBelum_${currentIterIdx}">🔄 Belum Optimal (Ada $z_j - c_j > 0$)</button>
+        <button class="btn btn-outline-secondary" id="btnOptInfeasible_${currentIterIdx}">❌ Tidak Feasible</button>
+        <button class="btn btn-outline-danger" id="btnOptUnbounded_${currentIterIdx}">🚫 Solusi Unbounded</button>
+      </div>
+      <div id="feedbackOptCheck_${currentIterIdx}" class="feedback"></div>
+      <div id="optSolutionContainer_${currentIterIdx}" style="display:none; margin-top:1rem;"></div>
     </div>
   </div>`;
 
   const container = appendBlock(html);
 
-  if ($(`btnSkipAljabarEnter_${currentIterIdx}`)) {
-    $(`btnSkipAljabarEnter_${currentIterIdx}`).onclick = () => {
-      const targetCol = iter.enterCol !== undefined ? iter.enterCol : targetEnterCol;
-      const btn = container.querySelector(`button[data-col="${targetCol}"]`);
-      if (btn) btn.click();
-    };
+  function checkPricingInputs() {
+    const fb = $(`feedbackAljabarEnter_${currentIterIdx}`);
+    let allOk = true;
+
+    nonBasisCandidates.forEach(c => {
+      for (let i = 0; i < m; i++) {
+        const inp = $(`inpY_${currentIterIdx}_${c.col}_${i}`);
+        if (inp) {
+          const val = parseFracWithM(inp.value);
+          const exp = c.expY[i];
+          if (!val || !val.eq(exp)) {
+            allOk = false;
+            inp.classList.add('wrong');
+            inp.classList.remove('correct');
+          } else {
+            inp.classList.add('correct');
+            inp.classList.remove('wrong');
+          }
+        }
+      }
+
+      const inpZ = $(`inpZ_${currentIterIdx}_${c.col}`);
+      if (inpZ) {
+        const val = parseFracWithM(inpZ.value);
+        const exp = c.expZ;
+        if (!val || !val.eq(exp)) {
+          allOk = false;
+          inpZ.classList.add('wrong');
+          inpZ.classList.remove('correct');
+        } else {
+          inpZ.classList.add('correct');
+          inpZ.classList.remove('wrong');
+        }
+      }
+
+      const inpZjMinusCj = $(`inpZjMinusCj_${currentIterIdx}_${c.col}`);
+      if (inpZjMinusCj) {
+        const val = parseFracWithM(inpZjMinusCj.value);
+        const exp = c.expZjMinusCj;
+        if (!val || !val.eq(exp)) {
+          allOk = false;
+          inpZjMinusCj.classList.add('wrong');
+          inpZjMinusCj.classList.remove('correct');
+        } else {
+          inpZjMinusCj.classList.add('correct');
+          inpZjMinusCj.classList.remove('wrong');
+        }
+      }
+    });
+
+    if (allOk) {
+      if (fb) {
+        fb.className = 'feedback show success';
+        fb.textContent = '✅ Benar! Nilai y_j, z_j, dan z_j - c_j terverifikasi. Tentukan status optimalitas di bawah.';
+      }
+
+      container.querySelectorAll('input').forEach(inp => inp.disabled = true);
+      $(`btnCheckPricing_${currentIterIdx}`).style.display = 'none';
+      $(`secOptCheck_${currentIterIdx}`).style.display = 'block';
+
+      return true;
+    } else {
+      if (fb) {
+        fb.className = 'feedback show error';
+        fb.textContent = '❌ Beberapa nilai y_j, z_j, atau z_j - c_j masih belum tepat. Periksa kolom yang ditandai merah.';
+      }
+      return false;
+    }
   }
 
-  container.querySelectorAll('.btn-algebra-enter').forEach(btn => {
-    btn.onclick = () => {
-      const col = parseInt(btn.dataset.col);
-      const fb = $(`feedbackAljabarEnter_${currentIterIdx}`);
-      const targetVal = iter.enterCol !== undefined ? tab.rows[0][iter.enterCol] : null;
-      const clickedVal = tab.rows[0][col];
+  $(`btnCheckPricing_${currentIterIdx}`).onclick = checkPricingInputs;
 
-      const isCorrectCol = (col === iter.enterCol) || 
-                           (targetVal && clickedVal && clickedVal.isPos() && clickedVal.eq(targetVal)) ||
-                           (col === targetEnterCol);
+  const fbOpt = $(`feedbackOptCheck_${currentIterIdx}`);
 
-      if (isCorrectCol) {
-        iter.enterCol = col;
-        fb.className = 'feedback show success';
-        fb.textContent = '✅ Benar! Variabel ini memiliki koefisien positif terbesar di fungsi z.';
-        
-        // Disable Enter buttons visually with neutral highlight
-        container.querySelectorAll('.btn-algebra-enter').forEach(b => {
-          b.disabled = true;
-          b.style.opacity = '0.6';
-        });
-        btn.style.opacity = '1';
-        btn.style.background = 'var(--text-primary)';
-        btn.style.color = 'var(--bg-primary)';
-        btn.style.borderColor = 'var(--text-primary)';
+  $(`btnOptYa_${currentIterIdx}`).onclick = () => {
+    if (iter.optimal || !existsPositiveZjMinusCj) {
+      fbOpt.className = 'feedback show success';
+      fbOpt.textContent = '✅ Benar! Seluruh z_j - c_j <= 0. Solusi optimal telah ditemukan.';
+      disableContainer(container);
+      setTimeout(renderStep5, 600);
+    } else {
+      fbOpt.className = 'feedback show error';
+      fbOpt.textContent = '❌ Masalah ini belum optimal karena masih ada variabel nonbasis dengan nilai z_j - c_j > 0.';
+    }
+  };
 
-        // Enable Leave buttons in Section 2
-        container.querySelectorAll('.btn-algebra-leave').forEach(b => {
-          b.disabled = false;
-          b.style.opacity = '1';
-        });
-        if ($(`btnUnboundedAljabar_${currentIterIdx}`)) {
-          $(`btnUnboundedAljabar_${currentIterIdx}`).disabled = false;
-          $(`btnUnboundedAljabar_${currentIterIdx}`).style.opacity = '1';
+  $(`btnOptBelum_${currentIterIdx}`).onclick = () => {
+    if (existsPositiveZjMinusCj) {
+      fbOpt.className = 'feedback show success';
+      fbOpt.textContent = '✅ Benar! Masih ada z_j - c_j > 0. Silakan klik baris variabel nonbasis yang akan menjadi variabel masuk (Entering Variable).';
+
+      $(`btnOptYa_${currentIterIdx}`).disabled = true;
+      $(`btnOptBelum_${currentIterIdx}`).disabled = true;
+      $(`btnOptInfeasible_${currentIterIdx}`).disabled = true;
+      $(`btnOptUnbounded_${currentIterIdx}`).disabled = true;
+
+      container.querySelectorAll('.pricing-row').forEach(row => {
+        row.style.cursor = 'pointer';
+        row.style.outline = '2px dashed var(--accent)';
+        row.style.outlineOffset = '-2px';
+        row.style.background = 'rgba(124,58,237,0.04)';
+
+        row.onmouseenter = () => { row.style.background = 'rgba(124,58,237,0.12)'; };
+        row.onmouseleave = () => { row.style.background = 'rgba(124,58,237,0.04)'; };
+
+        row.onclick = () => {
+          const col = parseInt(row.dataset.col);
+          if (col === targetEnterCol) {
+            iter.enterCol = col;
+            fbOpt.className = 'feedback show success';
+            fbOpt.textContent = `✅ Benar! Variabel $${formatSubscriptVar(col - 1)}$ dipilih sebagai Variabel Masuk.`;
+
+            container.querySelectorAll('.pricing-row').forEach(r => {
+              r.style.cursor = 'default';
+              r.style.outline = 'none';
+              r.onmouseenter = null;
+              r.onmouseleave = null;
+            });
+
+            row.style.background = 'rgba(124,58,237,0.08)';
+            row.style.outline = '2px solid var(--accent)';
+            const firstTd = row.querySelector('td');
+            if (firstTd) {
+              firstTd.style.background = 'var(--accent)';
+              firstTd.style.color = '#ffffff';
+              firstTd.style.borderRadius = 'var(--radius) 0 0 var(--radius)';
+            }
+
+            disableContainer(container);
+            setTimeout(renderIterAljabarPickLeave, 600);
+          } else {
+            fbOpt.className = 'feedback show error';
+            fbOpt.textContent = '❌ Pilih variabel nonbasis dengan nilai $z_j - c_j > 0$ positif terbesar.';
+          }
+        };
+      });
+    } else {
+      fbOpt.className = 'feedback show error';
+      fbOpt.textContent = '❌ Seluruh z_j - c_j <= 0, sehingga sistem ini sudah optimal!';
+    }
+  };
+
+  $(`btnOptInfeasible_${currentIterIdx}`).onclick = () => {
+    if (iter.infeasible) {
+      fbOpt.className = 'feedback show success';
+      fbOpt.textContent = '✅ Benar! Masalah bersifat Tidak Feasible.';
+      disableContainer(container);
+      setTimeout(renderInfeasibleConclusionCard, 800);
+    } else {
+      fbOpt.className = 'feedback show error';
+      fbOpt.textContent = '❌ Masalah ini tidak Infeasible.';
+    }
+  };
+
+  $(`btnOptUnbounded_${currentIterIdx}`).onclick = () => {
+    if (iter.unbounded) {
+      fbOpt.className = 'feedback show success';
+      fbOpt.textContent = '✅ Benar! Masalah bersifat Unbounded.';
+      disableContainer(container);
+      setTimeout(renderUnboundedConclusionCard, 800);
+    } else {
+      fbOpt.className = 'feedback show error';
+      fbOpt.textContent = '❌ Masalah ini tidak Unbounded.';
+    }
+  };
+
+  if ($(`btnSkipAljabarEnter_${currentIterIdx}`)) {
+    $(`btnSkipAljabarEnter_${currentIterIdx}`).onclick = () => {
+      nonBasisCandidates.forEach(c => {
+        for (let i = 0; i < m; i++) {
+          const inp = $(`inpY_${currentIterIdx}_${c.col}_${i}`);
+          if (inp) inp.value = c.expY[i].toString();
         }
+        const inpZ = $(`inpZ_${currentIterIdx}_${c.col}`);
+        if (inpZ) inpZ.value = c.expZ.toString();
+        const inpZjMinusCj = $(`inpZjMinusCj_${currentIterIdx}_${c.col}`);
+        if (inpZjMinusCj) inpZjMinusCj.value = c.expZjMinusCj.toString();
+      });
+
+      checkPricingInputs();
+
+      if (!existsPositiveZjMinusCj || iter.optimal) {
+        $(`btnOptYa_${currentIterIdx}`).click();
+      } else if (iter.unbounded) {
+        $(`btnOptUnbounded_${currentIterIdx}`).click();
       } else {
-        fb.className = 'feedback show error';
-        fb.textContent = '❌ Bukan variabel itu. Pilih variabel non-basis dengan koefisien positif terbesar pada fungsi z.';
+        $(`btnOptBelum_${currentIterIdx}`).click();
+        const targetRow = container.querySelector(`.pricing-row[data-col="${targetEnterCol}"]`);
+        if (targetRow) targetRow.click();
       }
     };
+  }
+}
+
+function renderIterAljabarPickLeave() {
+  const p = prob;
+  const iter = p.iterations[currentIterIdx];
+  const tab = iter.tab;
+  const row0 = tab.rows[0];
+  const numCols = row0.length;
+  const m = p.m;
+  const targetEnterCol = iter.enterCol;
+  const targetLeaveRow = targetEnterCol > 0 ? findLeaving(tab, targetEnterCol) : -1;
+  const isUnbounded = iter.unbounded || (targetEnterCol > 0 && targetLeaveRow === -1);
+  const enterVarName = formatSubscriptVar(targetEnterCol - 1);
+
+  const basisVarNames = [];
+  for (let i = 0; i < m; i++) {
+    basisVarNames.push(formatSubscriptVar(tab.basis[i]));
+  }
+
+  let minRatio = null;
+  if (targetLeaveRow > 0) {
+    const bVal = tab.rows[targetLeaveRow][numCols - 1];
+    const yVal = tab.rows[targetLeaveRow][targetEnterCol];
+    if (yVal.isPos()) {
+      minRatio = bVal.div(yVal);
+    }
+  }
+
+  let leaveButtonsHtml = '';
+  for (let i = 1; i <= m; i++) {
+    const bName = basisVarNames[i - 1];
+    leaveButtonsHtml += `
+      <button class="btn btn-outline-secondary btn-algebra-leave" data-row="${i}" style="font-weight:bold; padding:0.5rem 1.25rem; font-size:1rem; border-radius:var(--radius); transition:all 0.2s;">
+        $${bName}$
+      </button>
+    `;
+  }
+
+  let unboundedBtnHtml = '';
+  if (isUnbounded) {
+    unboundedBtnHtml = `
+      <div style="margin-top:0.75rem;">
+        <button class="btn btn-outline-danger" id="btnUnboundedAljabar_${currentIterIdx}" style="font-weight:bold; padding:0.5rem 1rem;">
+          🚫 Solusi Unbounded (Semua $y_{ik} \\le 0$)
+        </button>
+      </div>`;
+  }
+
+  const lhsVectorHtml = renderBracketedVectorLabels(basisVarNames);
+  const rhsVec1Html = renderBracketedVectorInputs(m, `inpBBar_${currentIterIdx}`);
+  const rhsVec2Html = renderBracketedVectorInputs(m, `inpYLeave_${currentIterIdx}`);
+
+  const html = `<div class="card" id="ratioAljabarCard_${currentIterIdx}">
+    <div class="card-title">
+      <span>📌 Iterasi Aljabar ${currentIterIdx + 1} • Leaving Variable & Nilai Variabel Masuk</span>
+      <div class="card-title-actions">
+        <button class="btn-skip" id="btnSkipAljabarLeave_${currentIterIdx}">⚡ Skip (Kerjakan)</button>
+        <button class="btn btn-sm btn-outline-secondary btn-undo-step" onclick="undoPreviousStep()">↩️ Undo</button>
+        <button class="btn-help" onclick="openHelpDrawer(4)">❓ Bagaimana caranya?</button>
+      </div>
+    </div>
+
+    <div style="background:var(--card-bg); padding:1.25rem; border-radius:var(--radius); border:1px solid var(--border-color); margin-bottom:1.25rem;">
+      <div style="display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:0.6rem; font-size:1.1rem; font-weight:bold; margin-bottom:1.5rem; color:var(--text-primary);">
+        ${lhsVectorHtml}
+        <span>=</span>
+        ${rhsVec1Html}
+        <span>−</span>
+        ${rhsVec2Html}
+        <span style="font-size:1.15rem; color:var(--text-primary); margin-right:0.3rem;">$${enterVarName}$</span>
+        <span style="margin:0 0.4rem; color:var(--text-muted); font-size:1.2rem;">,</span>
+        <div style="display:inline-flex; align-items:center; gap:0.4rem; margin-left:0.2rem;">
+          <span style="font-weight:bold; font-size:1.05rem; color:var(--text-primary);">$${enterVarName} =$</span>
+          <input type="text" id="inpRatioVal_${currentIterIdx}" placeholder="Nilai" style="width:85px; text-align:center; padding:0.35rem; border-radius:var(--radius); border:1px solid var(--border-color); font-family:inherit; font-size:0.95rem;">
+        </div>
+      </div>
+
+      <div style="text-align:center;">
+        <div style="font-weight:bold; font-size:0.92rem; color:var(--text-secondary); margin-bottom:0.6rem;">
+          Pilih Variabel Keluar:
+        </div>
+        <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:0.75rem;">
+          ${leaveButtonsHtml}
+        </div>
+        ${unboundedBtnHtml}
+      </div>
+    </div>
+
+    <div id="feedbackAljabarLeave_${currentIterIdx}" class="feedback"></div>
+
+    <div class="btn-row" style="margin-top:1rem;">
+      <button class="btn btn-primary" id="btnCheckAljabarLeave_${currentIterIdx}">Verifikasi & Lanjut →</button>
+    </div>
+  </div>`;
+
+  const container = appendBlock(html);
+
+  let selectedLeaveRow = -1;
+
+  container.querySelectorAll('.btn-algebra-leave').forEach(btn => {
+    btn.onclick = () => {
+      selectedLeaveRow = parseInt(btn.dataset.row);
+      container.querySelectorAll('.btn-algebra-leave').forEach(b => {
+        b.classList.remove('btn-primary');
+        b.classList.add('btn-outline-secondary');
+        b.style.background = 'transparent';
+        b.style.color = 'inherit';
+      });
+      btn.classList.remove('btn-outline-secondary');
+      btn.classList.add('btn-primary');
+      btn.style.background = 'var(--accent)';
+      btn.style.color = '#ffffff';
+      btn.style.borderColor = 'var(--accent)';
+    };
   });
+
+  function checkCardLeaveInputs() {
+    const fb = $(`feedbackAljabarLeave_${currentIterIdx}`);
+    let allOk = true;
+    let wrongFields = [];
+
+    // 1. Verify vector b_bar
+    for (let i = 0; i < m; i++) {
+      const inp = $(`inpBBar_${currentIterIdx}_${i}`);
+      if (inp) {
+        const val = parseFracWithM(inp.value);
+        const exp = tab.rows[i + 1][numCols - 1];
+        if (!val || !val.eq(exp)) {
+          allOk = false;
+          inp.classList.add('wrong');
+          inp.classList.remove('correct');
+          wrongFields.push('Vektor Ruas Kanan (b̄)');
+        } else {
+          inp.classList.add('correct');
+          inp.classList.remove('wrong');
+        }
+      }
+    }
+
+    // 2. Verify vector y_k
+    for (let i = 0; i < m; i++) {
+      const inp = $(`inpYLeave_${currentIterIdx}_${i}`);
+      if (inp) {
+        const val = parseFracWithM(inp.value);
+        const exp = tab.rows[i + 1][targetEnterCol];
+        if (!val || !val.eq(exp)) {
+          allOk = false;
+          inp.classList.add('wrong');
+          inp.classList.remove('correct');
+          wrongFields.push(`Vektor y_${targetEnterCol}`);
+        } else {
+          inp.classList.add('correct');
+          inp.classList.remove('wrong');
+        }
+      }
+    }
+
+    // 3. Verify min ratio value x_k
+    const inpRatioVal = $(`inpRatioVal_${currentIterIdx}`);
+    if (inpRatioVal) {
+      const val = parseFracWithM(inpRatioVal.value);
+      if (!val || !minRatio || !val.eq(minRatio)) {
+        allOk = false;
+        inpRatioVal.classList.add('wrong');
+        inpRatioVal.classList.remove('correct');
+        wrongFields.push(`Nilai Rasio Minimum ${enterVarName}`);
+      } else {
+        inpRatioVal.classList.add('correct');
+        inpRatioVal.classList.remove('wrong');
+      }
+    }
+
+    // 4. Verify Leaving Variable selection
+    if (isUnbounded) {
+      allOk = false;
+      wrongFields.push('Masalah bersifat Unbounded');
+    } else if (selectedLeaveRow !== targetLeaveRow) {
+      allOk = false;
+      wrongFields.push('Pilihan Variabel Keluar Basis');
+    }
+
+    if (allOk) {
+      iter.leaveRow = targetLeaveRow;
+      fb.className = 'feedback show success';
+      fb.textContent = `✅ Benar! Seluruh nilai vektor b̄, y_${targetEnterCol}, rasio minimum ${enterVarName}, dan variabel keluar (${basisVarNames[targetLeaveRow - 1]}) terverifikasi.`;
+
+      disableContainer(container);
+      currentIterIdx++;
+      setTimeout(renderIterAljabarUpdateBasis, 600);
+      return true;
+    } else {
+      fb.className = 'feedback show error';
+      const uniqueWrong = Array.from(new Set(wrongFields)).join(', ');
+      if (isUnbounded) {
+        fb.textContent = '❌ Seluruh komponen y_k <= 0. Klik tombol "Solusi Unbounded".';
+      } else if (selectedLeaveRow === -1) {
+        fb.textContent = `❌ Silakan pilih Variabel Keluar Basis dan periksa bidang input yang salah (${uniqueWrong}).`;
+      } else {
+        fb.textContent = `❌ Ada nilai yang belum tepat pada: ${uniqueWrong}. Silakan periksa kembali!`;
+      }
+      return false;
+    }
+  }
+
+  $(`btnCheckAljabarLeave_${currentIterIdx}`).onclick = checkCardLeaveInputs;
+
+  if ($(`btnSkipAljabarLeave_${currentIterIdx}`)) {
+    $(`btnSkipAljabarLeave_${currentIterIdx}`).onclick = () => {
+      // Auto-fill b_bar vector
+      for (let i = 0; i < m; i++) {
+        const inp = $(`inpBBar_${currentIterIdx}_${i}`);
+        if (inp) inp.value = tab.rows[i + 1][numCols - 1].toString();
+      }
+
+      // Auto-fill y_k vector
+      for (let i = 0; i < m; i++) {
+        const inp = $(`inpYLeave_${currentIterIdx}_${i}`);
+        if (inp) inp.value = tab.rows[i + 1][targetEnterCol].toString();
+      }
+
+      // Auto-fill ratio value
+      if (minRatio && $(`inpRatioVal_${currentIterIdx}`)) {
+        $(`inpRatioVal_${currentIterIdx}`).value = minRatio.toString();
+      }
+
+      // Auto-select leave row
+      if (targetLeaveRow > 0) {
+        const btn = container.querySelector(`button[data-row="${targetLeaveRow}"]`);
+        if (btn) btn.click();
+      }
+
+      checkCardLeaveInputs();
+    };
+  }
 
   if (isUnbounded && $(`btnUnboundedAljabar_${currentIterIdx}`)) {
     $(`btnUnboundedAljabar_${currentIterIdx}`).onclick = () => {
       const fb = $(`feedbackAljabarLeave_${currentIterIdx}`);
       fb.className = 'feedback show success';
-      fb.textContent = '✅ Benar! Seluruh persamaan kendala tidak membatasi variabel masuk (rasio ≤ 0). Masalah ini bersifat Tidak Terbatas (Unbounded).';
+      fb.textContent = '✅ Benar! Seluruh komponen y_k = B⁻¹a_k <= 0. Masalah bersifat Unbounded.';
       disableContainer(container);
       setTimeout(renderUnboundedConclusionCard, 800);
     };
-  }
-
-  container.querySelectorAll('.btn-algebra-leave').forEach(btn => {
-    btn.onclick = () => {
-      const row = parseInt(btn.dataset.row);
-      const fb = $(`feedbackAljabarLeave_${currentIterIdx}`);
-      const enterCol = iter.enterCol || targetEnterCol;
-      const aCoeff = tab.rows[row][enterCol];
-      const bVal = tab.rows[row][tab.rows[row].length - 1];
-      const basisVarName = formatSubscriptVar(tab.basis[row - 1]);
-
-      if (isUnbounded) {
-        fb.className = 'feedback show error';
-        fb.textContent = '❌ Tidak ada persamaan kendala yang membatasi. Klik tombol "Tidak Ada Batasan Rasio".';
-      } else if (row === targetLeaveRow) {
-        iter.leaveRow = targetLeaveRow;
-        fb.className = 'feedback show success';
-        fb.textContent = '✅ Benar! Variabel basis ini bernilai 0 lebih dulu (blocking variable dengan rasio terketat/terkecil). Lanjut ke substitusi aljabar.';
-        
-        container.querySelectorAll('.btn-algebra-leave').forEach(b => {
-          b.disabled = true;
-          b.style.opacity = '0.6';
-        });
-        btn.style.opacity = '1';
-        btn.style.background = 'var(--text-primary)';
-        btn.style.color = 'var(--bg-primary)';
-        btn.style.borderColor = 'var(--text-primary)';
-
-        disableContainer(container);
-        setTimeout(renderIterAljabarSubstitution, 600);
-      } else if (!aCoeff.isPos()) {
-        fb.className = 'feedback show error';
-        fb.textContent = `❌ Salah! Variabel basis ${basisVarName} tidak membatasi ${enterVarName} karena koefisiennya ${aCoeff.toString()} (≤ 0).`;
-      } else {
-        const ratio = bVal.div(aCoeff);
-        const targetACoeff = tab.rows[targetLeaveRow][enterCol];
-        const targetBVal = tab.rows[targetLeaveRow][tab.rows[targetLeaveRow].length - 1];
-        const minRatio = targetBVal.div(targetACoeff);
-        fb.className = 'feedback show error';
-        fb.textContent = `❌ Salah! Variabel basis ${basisVarName} belum bernilai 0 (rasionya = ${ratio.toString()}, lebih besar dari rasio minimum ${minRatio.toString()}).`;
-      }
-    };
-  });
-}
-
-function revealAljabarLeaveSection(container) {
-  // Already rendered in renderIterAljabarPickEnter from start
-  const secLeave = container.querySelector(`#secAljabarLeave_${currentIterIdx}`);
-  if (secLeave) {
-    secLeave.style.display = 'block';
-  }
-}
-
-function renderIterAljabarPickLeave() {
-  // Merged into renderIterAljabarPickEnter + revealAljabarLeaveSection
-  const container = document.getElementById(`iterAljabarCard_${currentIterIdx}`);
-  if (container) {
-    revealAljabarLeaveSection(container);
-  } else {
-    renderIterAljabarPickEnter();
   }
 }
 
@@ -3910,235 +4479,128 @@ function renderIterAljabarSubstitution() {
   const nextTab = doPivot(tab, iter.leaveRow, iter.enterCol);
   const numCols = nextTab.rows[0].length;
   const nTotal = numCols - 2;
+  const m = p.m;
 
   const enterVarName = formatSubscriptVar(iter.enterCol - 1);
   const leaveVarName = formatSubscriptVar(tab.basis[iter.leaveRow - 1]);
 
-  const nextBasisSet = new Set(nextTab.basis);
-  const nextNonBasisVars = [];
+  const newBasisSet = new Set(nextTab.basis);
+  const basisVarNames = nextTab.basis.map(bIdx => formatSubscriptVar(bIdx));
+  const newBasisNamesStr = basisVarNames.join(', ');
+
+  // Inputs for new basis solutions
+  let newBasisInputsHtml = '';
+  for (let i = 0; i < m; i++) {
+    const bName = basisVarNames[i];
+    newBasisInputsHtml += `
+      <div style="display:inline-flex; align-items:center; gap:0.4rem;">
+        <span style="font-weight:bold; font-size:0.95rem;">$${bName} =$</span>
+        <input type="text" id="inpNewBasis_${currentIterIdx}_${i}" placeholder="Solusi" style="width:80px; text-align:center; padding:0.35rem; border-radius:var(--radius); border:1px solid var(--border-color); font-family:inherit; font-size:0.9rem;">
+      </div>
+    `;
+  }
+
+  // Non-basic variables list
+  const nonBasisList = [];
   for (let j = 0; j < nTotal; j++) {
-    if (!nextBasisSet.has(j)) nextNonBasisVars.push(j);
+    if (!newBasisSet.has(j)) {
+      nonBasisList.push({ idx: j, col: j + 1, name: formatSubscriptVar(j) });
+    }
   }
 
-  // Step 1: Nyatakan variabel masuk dari persamaan variabel keluar
-  let step1InputHtml = `
-    <div class="std-form-line" style="margin:0.4rem 0 0.8rem 0; font-size:1.05rem;">
-      <span style="font-weight:bold; margin-right:0.15rem;">${texInline(enterVarName)} =</span>
-      <input type="text" id="aljSub1Const_${currentIterIdx}" style="width:50px; text-align:center;">
-  `;
-  nextNonBasisVars.forEach(nbIdx => {
-    const nbVarName = formatSubscriptVar(nbIdx);
-    step1InputHtml += `
-      <span>+</span>
-      <input type="text" id="aljSub1Coeff_${currentIterIdx}_${nbIdx}" style="width:50px; text-align:center;">
-      <span>${texInline(nbVarName)}</span>
+  // Inputs for objective function z = z0 - (z1-c1)x_N1 - (z2-c2)x_N2 ...
+  let nonBasisInputsHtml = '';
+  nonBasisList.forEach((c, k) => {
+    nonBasisInputsHtml += `
+      <span style="margin:0 0.15rem;">−</span>
+      <input type="text" id="inpNewCoeff_${currentIterIdx}_${k}" placeholder="${c.name}" style="width:75px; text-align:center; padding:0.35rem; border-radius:var(--radius); border:1px solid var(--border-color); font-family:inherit; font-size:0.9rem;">
+      <span style="color:var(--text-primary);">$${c.name}$</span>
     `;
   });
-  step1InputHtml += `</div>`;
-
-  // Step 2: System of equations inputs (Baris z: z + c1 x1 + c2 x2 = RHS)
-  let objInputHtml = `
-    <div class="std-form-line" style="margin-bottom:0.8rem; font-size:1.05rem;">
-      <span style="font-weight:bold; margin-right:0.15rem;">z</span>
-  `;
-  nextNonBasisVars.forEach(nbIdx => {
-    const nbVarName = formatSubscriptVar(nbIdx);
-    objInputHtml += `
-      <span>+</span>
-      <input type="text" id="aljSubObjCoeff_${currentIterIdx}_${nbIdx}" style="width:50px; text-align:center;">
-      <span>${texInline(nbVarName)}</span>
-    `;
-  });
-  objInputHtml += `
-      <span>=</span>
-      <input type="text" id="aljSubObjConst_${currentIterIdx}" style="width:50px; text-align:center;">
-    </div>
-  `;
-
-  let eqInputsHtml = '';
-  for (let i = 1; i < nextTab.rows.length; i++) {
-    const basisVarIdx = nextTab.basis[i - 1];
-    const basisVarName = formatSubscriptVar(basisVarIdx);
-
-    let rowInputs = `
-      <div class="std-form-line" style="margin-bottom:0.6rem; font-size:1.05rem;">
-        <span style="font-weight:bold; margin-right:0.15rem;">${texInline(basisVarName)} =</span>
-        <input type="text" id="aljSubConst_${currentIterIdx}_${i}" style="width:50px; text-align:center;">
-    `;
-
-    nextNonBasisVars.forEach(nbIdx => {
-      const nbVarName = formatSubscriptVar(nbIdx);
-      rowInputs += `
-        <span>+</span>
-        <input type="text" id="aljSubCoeff_${currentIterIdx}_${i}_${nbIdx}" style="width:50px; text-align:center;">
-        <span>${texInline(nbVarName)}</span>
-      `;
-    });
-
-    rowInputs += `</div>`;
-    eqInputsHtml += rowInputs;
-  }
-
-  const allVarNames = [];
-  for (let j = 0; j < nTotal; j++) allVarNames.push(formatSubscriptVar(j));
-  const nonNegTex = texInline(`${allVarNames.join(', ')} \\geq 0`);
 
   const html = `<div class="card" id="stepSubAljabarCard_${currentIterIdx}">
     <div class="card-title">
-      <span>Substitusi Persamaan Aljabar</span>
+      <span>📌 Perbarui Solusi Basis & Persamaan Fungsi Objektif</span>
       <div class="card-title-actions">
         <button class="btn-skip" id="btnSkipAljabarSub_${currentIterIdx}">⚡ Skip (Kerjakan)</button>
         <button class="btn btn-sm btn-outline-secondary btn-undo-step" onclick="undoPreviousStep()">↩️ Undo</button>
         <button class="btn-help" onclick="openHelpDrawer(4)">❓ Bagaimana caranya?</button>
       </div>
     </div>
-    <div style="margin-bottom:1.25rem; font-size:0.95rem; line-height:1.6;">
-      <div style="margin-bottom:0.4rem;">
-        1. Nyatakan variabel masuk ${texInline(enterVarName)} dari persamaan ${texInline(leaveVarName)}:
+
+    <div style="background:var(--card-bg); padding:1.1rem; border-radius:var(--radius); border:1px solid var(--border-color); margin-bottom:1.25rem;">
+      <h4 style="color:var(--text-primary); margin-bottom:0.75rem; font-size:0.95rem;">1. Solusi Basis Baru ($x_B$):</h4>
+      <div style="display:flex; flex-wrap:wrap; gap:1.25rem; align-items:center; margin-bottom:1.25rem;">
+        ${newBasisInputsHtml}
       </div>
-      ${step1InputHtml}
-      <div style="margin-top:0.8rem; margin-bottom:0.4rem;">
-        2. Substitusikan ${texInline(enterVarName)} ke seluruh persamaan kendala lainnya & baris $z$:
+
+      <h4 style="color:var(--text-primary); margin-bottom:0.75rem; font-size:0.95rem;">2. Persamaan Fungsi Objektif Baru ($z$):</h4>
+      <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:0.4rem; font-size:1.05rem; font-weight:bold; padding:0.85rem 1rem; background:var(--bg-primary); border-radius:var(--radius); border:1px solid var(--border-color);">
+        <span style="color:var(--text-primary);">$z =$</span>
+        <input type="text" id="inpNewZ0_${currentIterIdx}" placeholder="z₀" style="width:80px; text-align:center; padding:0.35rem; border-radius:var(--radius); border:1px solid var(--border-color); font-family:inherit; font-size:0.9rem;">
+        ${nonBasisInputsHtml}
       </div>
     </div>
 
-    <div style="font-weight:bold; margin-bottom:0.75rem; font-size:1rem;">Sistem Persamaan Aljabar Hasil Substitusi:</div>
-
-    ${objInputHtml}
-
-    <div style="margin:0.75rem 0 0.5rem 0; color:var(--text-secondary);">dengan kendala:</div>
-
-    ${eqInputsHtml}
-
-    <div class="btn-row" style="margin-top:1.5rem;">
-      <button class="btn btn-primary" id="btnCheckAljabarSub_${currentIterIdx}">Periksa Persamaan Aljabar Hasil Substitusi</button>
-    </div>
     <div id="feedbackAljabarSub_${currentIterIdx}" class="feedback"></div>
+
+    <div class="btn-row" style="margin-top:1rem;">
+      <button class="btn btn-primary" id="btnCheckAljabarSub_${currentIterIdx}">Verifikasi & Lanjut ke Iterasi Berikutnya →</button>
+    </div>
   </div>`;
 
   const container = appendBlock(html);
 
-  // Sync inputs between Step 1 and the leaveRow equation in Step 2
-  const inp1Const = $(`aljSub1Const_${currentIterIdx}`);
-  const inp2LeaveConst = $(`aljSubConst_${currentIterIdx}_${iter.leaveRow}`);
-  if (inp1Const && inp2LeaveConst) {
-    inp1Const.addEventListener('input', () => { inp2LeaveConst.value = inp1Const.value; });
-    inp2LeaveConst.addEventListener('input', () => { inp1Const.value = inp1Const.value; });
-  }
-
-  nextNonBasisVars.forEach(nbIdx => {
-    const inp1Coeff = $(`aljSub1Coeff_${currentIterIdx}_${nbIdx}`);
-    const inp2LeaveCoeff = $(`aljSubCoeff_${currentIterIdx}_${iter.leaveRow}_${nbIdx}`);
-    if (inp1Coeff && inp2LeaveCoeff) {
-      inp1Coeff.addEventListener('input', () => { inp2LeaveCoeff.value = inp1Coeff.value; });
-      inp2LeaveCoeff.addEventListener('input', () => { inp1Coeff.value = inp2LeaveCoeff.value; });
-    }
-  });
-
-  // Skip handler
-  if ($(`btnSkipAljabarSub_${currentIterIdx}`)) {
-    $(`btnSkipAljabarSub_${currentIterIdx}`).onclick = () => {
-      // Step 1
-      const expLeaveRowConst = nextTab.rows[iter.leaveRow][numCols - 1];
-      if ($(`aljSub1Const_${currentIterIdx}`)) {
-        $(`aljSub1Const_${currentIterIdx}`).value = expLeaveRowConst.isZero() ? '0' : expLeaveRowConst.toString();
-      }
-      nextNonBasisVars.forEach(nbIdx => {
-        const expCoeff = nextTab.rows[iter.leaveRow][nbIdx + 1].neg();
-        if ($(`aljSub1Coeff_${currentIterIdx}_${nbIdx}`)) {
-          $(`aljSub1Coeff_${currentIterIdx}_${nbIdx}`).value = expCoeff.toString();
-        }
-      });
-
-      // Objective (Baris z)
-      const expectedObjConst = nextTab.rows[0][numCols - 1];
-      if ($(`aljSubObjConst_${currentIterIdx}`)) {
-        $(`aljSubObjConst_${currentIterIdx}`).value = expectedObjConst.isZero() ? '0' : expectedObjConst.toString();
-      }
-      nextNonBasisVars.forEach(nbIdx => {
-        const expectedCoeff = nextTab.rows[0][nbIdx + 1];
-        if ($(`aljSubObjCoeff_${currentIterIdx}_${nbIdx}`)) {
-          $(`aljSubObjCoeff_${currentIterIdx}_${nbIdx}`).value = expectedCoeff.toString();
-        }
-      });
-
-      // Constraints
-      for (let i = 1; i < nextTab.rows.length; i++) {
-        const expectedConst = nextTab.rows[i][numCols - 1];
-        if ($(`aljSubConst_${currentIterIdx}_${i}`)) {
-          $(`aljSubConst_${currentIterIdx}_${i}`).value = expectedConst.isZero() ? '0' : expectedConst.toString();
-        }
-        nextNonBasisVars.forEach(nbIdx => {
-          const expectedCoeff = nextTab.rows[i][nbIdx + 1].neg();
-          if ($(`aljSubCoeff_${currentIterIdx}_${i}_${nbIdx}`)) {
-            $(`aljSubCoeff_${currentIterIdx}_${i}_${nbIdx}`).value = expectedCoeff.toString();
-          }
-        });
-      }
-
-      $(`btnCheckAljabarSub_${currentIterIdx}`).click();
-    };
-  }
-
-  // Check / Validate handler
-  $(`btnCheckAljabarSub_${currentIterIdx}`).onclick = () => {
+  function checkCardSubInputs() {
+    const fb = $(`feedbackAljabarSub_${currentIterIdx}`);
     let allOk = true;
+    let wrongFields = [];
 
-    // Validate Step 1
-    const expLeaveRowConst = nextTab.rows[iter.leaveRow][numCols - 1];
-    const inp1C = $(`aljSub1Const_${currentIterIdx}`);
-    if (inp1C) {
-      const val = parseFracWithM(inp1C.value);
-      if (!val || !val.eq(expLeaveRowConst)) {
-        allOk = false;
-        inp1C.classList.add('wrong');
-        inp1C.classList.remove('correct');
-      } else {
-        inp1C.classList.add('correct');
-        inp1C.classList.remove('wrong');
-      }
-    }
-
-    nextNonBasisVars.forEach(nbIdx => {
-      const expCoeff = nextTab.rows[iter.leaveRow][nbIdx + 1].neg();
-      const inp1Co = $(`aljSub1Coeff_${currentIterIdx}_${nbIdx}`);
-      if (inp1Co) {
-        const val = parseFracWithM(inp1Co.value);
-        if (!val || !val.eq(expCoeff)) {
-          allOk = false;
-          inp1Co.classList.add('wrong');
-          inp1Co.classList.remove('correct');
-        } else {
-          inp1Co.classList.add('correct');
-          inp1Co.classList.remove('wrong');
-        }
-      }
-    });
-
-    // Validate Objective (Baris z)
-    const expectedObjConst = nextTab.rows[0][numCols - 1];
-    const objConstInp = $(`aljSubObjConst_${currentIterIdx}`);
-    if (objConstInp) {
-      const val = parseFracWithM(objConstInp.value);
-      if (!val || !val.eq(expectedObjConst)) {
-        allOk = false;
-        objConstInp.classList.add('wrong');
-        objConstInp.classList.remove('correct');
-      } else {
-        objConstInp.classList.add('correct');
-        objConstInp.classList.remove('wrong');
-      }
-    }
-
-    nextNonBasisVars.forEach(nbIdx => {
-      const expectedCoeff = nextTab.rows[0][nbIdx + 1];
-      const inp = $(`aljSubObjCoeff_${currentIterIdx}_${nbIdx}`);
+    // 1. Verify new basis solution inputs
+    for (let i = 0; i < m; i++) {
+      const inp = $(`inpNewBasis_${currentIterIdx}_${i}`);
       if (inp) {
         const val = parseFracWithM(inp.value);
-        if (!val || !val.eq(expectedCoeff)) {
+        const exp = nextTab.rows[i + 1][numCols - 1];
+        if (!val || !val.eq(exp)) {
           allOk = false;
           inp.classList.add('wrong');
           inp.classList.remove('correct');
+          wrongFields.push(`Solusi Basis ${basisVarNames[i]}`);
+        } else {
+          inp.classList.add('correct');
+          inp.classList.remove('wrong');
+        }
+      }
+    }
+
+    // 2. Verify new z0 constant
+    const inpZ0 = $(`inpNewZ0_${currentIterIdx}`);
+    if (inpZ0) {
+      const val = parseFracWithM(inpZ0.value);
+      const exp = nextTab.rows[0][numCols - 1];
+      if (!val || !val.eq(exp)) {
+        allOk = false;
+        inpZ0.classList.add('wrong');
+        inpZ0.classList.remove('correct');
+        wrongFields.push('Nilai Konstanta z₀');
+      } else {
+        inpZ0.classList.add('correct');
+        inpZ0.classList.remove('wrong');
+      }
+    }
+
+    // 3. Verify non-basic variable coefficients (z_j - c_j)
+    nonBasisList.forEach((c, k) => {
+      const inp = $(`inpNewCoeff_${currentIterIdx}_${k}`);
+      if (inp) {
+        const val = parseFracWithM(inp.value);
+        const exp = nextTab.rows[0][c.col];
+        if (!val || !val.eq(exp)) {
+          allOk = false;
+          inp.classList.add('wrong');
+          inp.classList.remove('correct');
+          wrongFields.push(`Koefisien ${c.name}`);
         } else {
           inp.classList.add('correct');
           inp.classList.remove('wrong');
@@ -4146,51 +4608,44 @@ function renderIterAljabarSubstitution() {
       }
     });
 
-    // Validate Constraints
-    for (let i = 1; i < nextTab.rows.length; i++) {
-      const expectedConst = nextTab.rows[i][numCols - 1];
-      const constInp = $(`aljSubConst_${currentIterIdx}_${i}`);
-      if (constInp) {
-        const val = parseFracWithM(constInp.value);
-        if (!val || !val.eq(expectedConst)) {
-          allOk = false;
-          constInp.classList.add('wrong');
-          constInp.classList.remove('correct');
-        } else {
-          constInp.classList.add('correct');
-          constInp.classList.remove('wrong');
-        }
-      }
-
-      nextNonBasisVars.forEach(nbIdx => {
-        const expectedCoeff = nextTab.rows[i][nbIdx + 1].neg();
-        const coeffInp = $(`aljSubCoeff_${currentIterIdx}_${i}_${nbIdx}`);
-        if (coeffInp) {
-          const val = parseFracWithM(coeffInp.value);
-          if (!val || !val.eq(expectedCoeff)) {
-            allOk = false;
-            coeffInp.classList.add('wrong');
-            coeffInp.classList.remove('correct');
-          } else {
-            coeffInp.classList.add('correct');
-            coeffInp.classList.remove('wrong');
-          }
-        }
-      });
-    }
-
-    const fb = $(`feedbackAljabarSub_${currentIterIdx}`);
     if (allOk) {
       fb.className = 'feedback show success';
-      fb.textContent = '✅ Benar! Seluruh persamaan aljabar hasil substitusi sudah tepat.';
+      fb.textContent = '✅ Benar! Seluruh solusi basis baru dan fungsi objektif z terverifikasi.';
       disableContainer(container);
       currentIterIdx++;
       setTimeout(renderIterCheckOptimal, 600);
+      return true;
     } else {
       fb.className = 'feedback show error';
-      fb.textContent = '❌ Masih ada koefisien atau konstanta yang belum tepat. Periksa kembali hasil substitusi linier.';
+      const uniqueWrong = Array.from(new Set(wrongFields)).join(', ');
+      fb.textContent = `❌ Nilai belum tepat pada: ${uniqueWrong}. Silakan periksa kembali!`;
+      return false;
     }
-  };
+  }
+
+  $(`btnCheckAljabarSub_${currentIterIdx}`).onclick = checkCardSubInputs;
+
+  if ($(`btnSkipAljabarSub_${currentIterIdx}`)) {
+    $(`btnSkipAljabarSub_${currentIterIdx}`).onclick = () => {
+      // Auto-fill basis solutions
+      for (let i = 0; i < m; i++) {
+        const inp = $(`inpNewBasis_${currentIterIdx}_${i}`);
+        if (inp) inp.value = nextTab.rows[i + 1][numCols - 1].toString();
+      }
+
+      // Auto-fill z0
+      const inpZ0 = $(`inpNewZ0_${currentIterIdx}`);
+      if (inpZ0) inpZ0.value = nextTab.rows[0][numCols - 1].toString();
+
+      // Auto-fill non-basic coefficients
+      nonBasisList.forEach((c, k) => {
+        const inp = $(`inpNewCoeff_${currentIterIdx}_${k}`);
+        if (inp) inp.value = nextTab.rows[0][c.col].toString();
+      });
+
+      checkCardSubInputs();
+    };
+  }
 }
 
 function renderIterPickEnter() {
